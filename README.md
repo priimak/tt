@@ -1,2 +1,5 @@
-# tt
-chipscope and oscilloscope trace viewer and annotator
+# TT - Trace Tool
+
+![](./tt.png)
+
+Chipscope and oscilloscope trace viewer and annotator
