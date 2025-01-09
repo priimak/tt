@@ -8,8 +8,8 @@ from typing import Any
 import polars
 from polars import DataFrame
 
-from src.tt.data.jsonable import JsonSerializable
-from src.tt.data.persistable import Persistable
+from tt.data.jsonable import JsonSerializable
+from tt.data.persistable import Persistable
 
 
 class TraceSource(JsonSerializable, ABC):

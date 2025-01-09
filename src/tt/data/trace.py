@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional
 import polars
 from polars import DataFrame
 
-from src.tt.data.jsonable import JsonSerializable
+from tt.data.jsonable import JsonSerializable
 
 
 class TraceState(StrEnum):

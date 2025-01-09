@@ -5,9 +5,9 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.tt.data.jsonable import JsonSerializable
-from src.tt.data.trace import Trace, TracesConfig
-from src.tt.data.trace_source import TraceSource, NullTraceSource, CSVFileTraceSource
+from tt.data.jsonable import JsonSerializable
+from tt.data.trace import Trace, TracesConfig
+from tt.data.trace_source import TraceSource, NullTraceSource, CSVFileTraceSource
 
 
 class Project(JsonSerializable):
