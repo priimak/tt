@@ -18,6 +18,9 @@ class App:
         self.show_error: Callable[[str], None] = lambda _: None
         self.set_opened_project_label: Callable[[str], None] = lambda _: None
         self.set_showing_version_label: Callable[[str], None] = lambda _: None
+
+        self.rename_opened_project_menu_enable: Callable[[], None] = lambda: None
+        self.rename_opened_project_menu_disable: Callable[[], None] = lambda: None
         self.delete_opened_project_menu_enable: Callable[[], None] = lambda: None
         self.delete_opened_project_menu_disable: Callable[[], None] = lambda: None
 
@@ -28,3 +31,4 @@ class App:
         )
         self.set_showing_version_label(f"Traces Version #{project.latest_traces_version}")
         self.delete_opened_project_menu_enable()
+        self.rename_opened_project_menu_enable()

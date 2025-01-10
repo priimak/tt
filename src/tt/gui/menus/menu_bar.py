@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QMenuBar, QWidget
 
 from tt.gui.app import App
 from tt.gui.menus.file_menu import FileMenu
+from tt.gui.menus.help_menu import HelpMenu
 
 
 class MainMenuBar(QMenuBar):
@@ -10,4 +11,4 @@ class MainMenuBar(QMenuBar):
 
         self.file_menu = FileMenu(self, app, dialogs_parent)
         self.addMenu(self.file_menu)
-        # self.addMenu(HelpMenu(self, dialogs_parent))
+        self.addMenu(HelpMenu(self, dialogs_parent))

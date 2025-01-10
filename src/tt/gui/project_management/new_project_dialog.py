@@ -28,12 +28,12 @@ class FilePicker(Panel[HBoxLayout]):
                 app.state.set_value("last_opened_dir", f"{Path(file_name).parent.absolute()}")
 
         self.addWidget(QLabel(label))
-        csv_file_dialog_button = PushButton(
+        self.csv_file_dialog_button = PushButton(
             "***", on_clicked = pick_csv_file, auto_default = False,
             style_sheet = "border: 1px solid black;",
             cursor = QCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         )
-        self.addWidget(HBoxPanel([self.__file_name_line_edit, csv_file_dialog_button], spacing = 0, margins = 0))
+        self.addWidget(HBoxPanel([self.__file_name_line_edit, self.csv_file_dialog_button], spacing = 0, margins = 0))
         self.setMinimumWidth(500)
 
     def file_name(self) -> str:
@@ -55,7 +55,8 @@ class CreateNewProject(Dialog):
             elif new_project_name in app.pm.list_project_names():
                 app.show_error(f"Project named [{new_project_name}] already exists")
             elif cvs_file_name.strip() == "":
-                app.show_error("Please enter csv file that contains traces")
+                app.show_error("Please pick csv file that contains traces")
+                file_picker.csv_file_dialog_button.click()
             elif not Path(cvs_file_name).exists():
                 app.show_error(f"File {cvs_file_name} does not exist")
             else:

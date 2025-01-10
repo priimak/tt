@@ -22,16 +22,30 @@ class FileMenu(QMenu):
 
         self.addAction("&Open Project", open_existing_project)
 
+        def rename_project():
+            pass
+
+        # noinspection PyTypeChecker
+        rename_project_action: QAction = self.addAction("&Rename Project",
+                                                        rename_project)  # pyright: ignore [reportAssignmentType]
+
+        rename_project_action.setEnabled(False)
+        app.rename_opened_project_menu_enable = lambda: rename_project_action.setEnabled(True)
+        app.rename_opened_project_menu_disable = lambda: rename_project_action.setEnabled(False)
+
         def delete_opened_project():
             pass
 
         # noinspection PyTypeChecker
-        delete_opened_project_action: QAction = \
-            self.addAction("&Delete Project", delete_opened_project)  # pyright: ignore [reportAssignmentType]
+        delete_project_action: QAction = self.addAction("&Delete Project",
+                                                        delete_opened_project)  # pyright: ignore [reportAssignmentType]
 
-        delete_opened_project_action.setEnabled(False)
-        app.delete_opened_project_menu_enable = lambda: delete_opened_project_action.setEnabled(True)
-        app.delete_opened_project_menu_disable = lambda: delete_opened_project_action.setEnabled(False)
+        delete_project_action.setEnabled(False)
+        app.delete_opened_project_menu_enable = lambda: delete_project_action.setEnabled(True)
+        app.delete_opened_project_menu_disable = lambda: delete_project_action.setEnabled(False)
+
+        self.addSeparator()
+        self.addAction("&Settings", lambda: None)
 
         self.addSeparator()
         self.addAction("&Quit", lambda: app.exit_application())
