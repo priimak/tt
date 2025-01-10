@@ -18,8 +18,11 @@ class App:
         self.show_error: Callable[[str], None] = lambda _: None
         self.set_opened_project_label: Callable[[str], None] = lambda _: None
         self.set_showing_version_label: Callable[[str], None] = lambda _: None
+        self.delete_opened_project_menu_enable: Callable[[], None] = lambda: None
+        self.delete_opened_project_menu_disable: Callable[[], None] = lambda: None
 
     def set_new_open_project(self, project: Project) -> None:
         self.project = project
-        self.set_opened_project_label(f"Project [{project.name}]")
+        self.set_opened_project_label(f"Project [{project.name}] tracking file {project.trace_source.uri()}")
         self.set_showing_version_label(f"Traces Version #{project.latest_traces_version}")
+        self.delete_opened_project_menu_enable()

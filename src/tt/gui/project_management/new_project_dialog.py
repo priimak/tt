@@ -16,7 +16,10 @@ class FilePicker(Panel[HBoxLayout]):
         self.__file_name_line_edit = QLineEdit("")
 
         def pick_csv_file():
-            last_opened_dir: str = app.state.get_value("last_opened_dir", f"{Path.home()}")
+            last_opened_dir: str = app.state.get_value(
+                "last_opened_dir", f"{Path.home()}"
+            )  # pyright: ignore [reportAssignmentType]
+
             file_name, _ = QFileDialog.getOpenFileName(
                 self, caption = "Open CSV File", dir = last_opened_dir, filter = "*.csv"
             )
@@ -62,15 +65,13 @@ class CreateNewProject(Dialog):
                 self.close()
                 app.set_new_open_project(project)
 
-        ok_button = PushButton("Ok", on_clicked = do_create_new_project)
-        ok_button.setAutoDefault(True)
         self.setLayout(VBoxLayout(
             widgets = [
                 project_name_input,
                 file_picker,
                 HBoxPanel([
                     QSpacerItem,
-                    ok_button,
+                    PushButton("Ok", on_clicked = do_create_new_project, auto_default = True),
                     PushButton("Cancel", on_clicked = lambda: self.close())
                 ])
             ]

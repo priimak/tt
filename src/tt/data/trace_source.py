@@ -17,6 +17,10 @@ class TraceSource(JsonSerializable, ABC):
         self.persistence = persistence  # persistence
 
     @abstractmethod
+    def uri(self) -> str:
+        pass
+
+    @abstractmethod
     def load_data(self) -> DataFrame:
         pass
 
@@ -61,6 +65,9 @@ class NullTraceSource(TraceSource):
             "type": "NullTraceSource",
         }
 
+    def uri(self) -> str:
+        return "Null"
+
     def has_changed(self) -> bool:
         return False
 
@@ -79,6 +86,9 @@ class CSVFileTraceSource(TraceSource):
         super().__init__(persistence)
         self.file = file
         self.last_modified = os.path.getmtime(file) if last_modified is None else last_modified
+
+    def uri(self) -> str:
+        return f"{self.file.absolute()}"
 
     def has_changed(self) -> bool:
         return os.path.getmtime(self.file) != self.last_modified
