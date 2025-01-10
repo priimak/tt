@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QHBoxLayout, QLabel
-from pytide6 import Panel
+from pytide6 import Panel, RichTextLabel
 
 from tt.gui.app import App
 
@@ -7,7 +7,7 @@ from tt.gui.app import App
 class InfoPanel(Panel[QHBoxLayout]):
     def __init__(self, app: App):
         super().__init__(QHBoxLayout())
-        self.opened_project_label = QLabel("")
+        self.opened_project_label = RichTextLabel("")
         self.showing_version_label = QLabel("")
 
         self.layout().addWidget(self.opened_project_label)

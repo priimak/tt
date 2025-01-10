@@ -23,6 +23,8 @@ class App:
 
     def set_new_open_project(self, project: Project) -> None:
         self.project = project
-        self.set_opened_project_label(f"Project [{project.name}] tracking file {project.trace_source.uri()}")
+        self.set_opened_project_label(
+            f"Project <em><b>{project.name}</b></em> tracking file <em><b>{project.trace_source.uri()}</b></em>"
+        )
         self.set_showing_version_label(f"Traces Version #{project.latest_traces_version}")
         self.delete_opened_project_menu_enable()
