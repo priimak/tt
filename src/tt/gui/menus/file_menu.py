@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QMenu, QMenuBar, QWidget
 from tt.gui.app import App
 from tt.gui.project_management.new_project_dialog import CreateNewProject
 from tt.gui.project_management.open_existing_project_dialog import OpenProjectDialog
+from tt.gui.settings.settings_dialog import SettingsDialog
 
 
 class FileMenu(QMenu):
@@ -45,7 +46,12 @@ class FileMenu(QMenu):
         app.delete_opened_project_menu_disable = lambda: delete_project_action.setEnabled(False)
 
         self.addSeparator()
-        self.addAction("&Settings", lambda: None)
+
+        def show_settings_window():
+            settings_dialog = SettingsDialog(parent, app)
+            settings_dialog.show()
+
+        self.addAction("&Settings", show_settings_window)
 
         self.addSeparator()
         self.addAction("&Quit", lambda: app.exit_application())

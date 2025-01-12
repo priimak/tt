@@ -5,8 +5,8 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
-import polars
-from polars import DataFrame
+import polars as pl
+from polars import DataFrame, Expr
 
 from tt.data.jsonable import JsonSerializable
 from tt.data.persistable import Persistable
@@ -100,14 +100,34 @@ class CSVFileTraceSource(TraceSource):
     def load_data(self) -> DataFrame:
         text = [l for l in self.file.read_text().replace(r'\r', '').split("\n") if l != ""]
         t = [text[0]]
+        header = pl.read_csv(BytesIO("\n".join(t).encode()), infer_schema = False)
 
-        if "Radix" not in text[1]:
-            # second to may contain radix; if not, then add
-            t.append(text[1])
+        def get_ctrs() -> list[Expr]:
+            if "Radix" not in text[1]:
+                # second to may contain radix; if not, then add
+                t.append(text[1])
+                return [pl.col(cname).str.to_integer(base = 10) for cname in header.columns]
+            else:
+                # we have radix defined.
+                columns_transform = []
+                for cr in zip(header.columns, text[1].replace("Radix - ", "").split(",")):
+                    cname = cr[0]  # column name
+                    radix = cr[1].upper()  # radix
+                    print(f"{cname} :: {radix}")
+                    match radix:
+                        case "HEX":
+                            columns_transform.append(pl.col(cname).str.to_integer(base = 16))
+                        case "OCTAL":
+                            columns_transform.append(pl.col(cname).str.to_integer(base = 8))
+                        case "BIN":
+                            columns_transform.append(pl.col(cname).str.to_integer(base = 2))
+                        case _:
+                            columns_transform.append(pl.col(cname).str.to_integer())
+                return columns_transform
 
+        column_transforms = get_ctrs()
         t.extend(text[2:])
-        csv = polars.read_csv(BytesIO("\n".join(t).encode()), infer_schema = False).cast(polars.Float64)
-        return csv
+        return pl.read_csv(BytesIO("\n".join(t).encode()), infer_schema = False).with_columns(column_transforms)
 
     def to_dict(self) -> dict[str, Any]:
         return {

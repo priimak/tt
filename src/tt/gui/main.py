@@ -19,8 +19,8 @@ def main():
         app_name = "tt",
         init_config_data = {
             "max_last_opened_files": 10,
-            "open_last_opened_file_on_load": False,
-            "first_time_run": True
+            "open_last_opened_project_on_load": True,
+            "watch_for_source_changes": True
         }
     )
     win = TTMainWindow(screen_dim = (screen_width, screen_height), app_persistence = persistence)

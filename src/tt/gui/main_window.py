@@ -1,6 +1,6 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox, QVBoxLayout
-from pytide6 import MainWindow, set_geometry, VBoxPanel, Panel, Layout
+from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QTabWidget
+from pytide6 import MainWindow, set_geometry, VBoxPanel, Panel
 from sprats.config import AppPersistence
 
 from src.tt.gui.app import App
@@ -24,11 +24,17 @@ class TTMainWindow(MainWindow):
 
         self.main_menu_bar = self.setMenuBar(MainMenuBar(self.app, dialogs_parent = self))
 
+        main_widget = QTabWidget()
+        # noinspection PyTypeChecker
+        main_widget.addTab(Panel(QVBoxLayout()), "Active Traces")
+        main_widget.addTab(Panel(QVBoxLayout()), "Inactive Traces")
+        main_widget.addTab(Panel(QVBoxLayout()), "Views")
+
         self.setCentralWidget(
             VBoxPanel(
                 spacing = 0, margins = (5, 5, 5, 1)
             ).addWidget(
-                Panel[QVBoxLayout](Layout(QVBoxLayout, margins = 0)),
+                main_widget,
                 stretch = 1
             ).addWidget(
                 InfoPanel(self.app)
