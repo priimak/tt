@@ -1,7 +1,7 @@
 from PySide6 import QtCore
-from PySide6.QtWidgets import QHBoxLayout, QSpacerItem
-from pytide6 import Dialog, VBoxLayout, CheckBox, Panel
+from pytide6 import Dialog, VBoxLayout, CheckBox, HBoxPanel
 from pytide6.buttons import PushButton
+from pytide6.widget_wrapper import W
 
 from tt.gui.app import App
 
@@ -34,5 +34,5 @@ class SettingsDialog(Dialog):
         self.setLayout(VBoxLayout([
             open_last_opened_project_on_load_cb,
             watch_for_source_changes_cb,
-            Panel(QHBoxLayout(), [QSpacerItem, ok_button, PushButton("Cancel", on_clicked = self.close)])
+            HBoxPanel([W(HBoxPanel(), stretch = 1), ok_button, PushButton("Cancel", on_clicked = self.close)])
         ]))

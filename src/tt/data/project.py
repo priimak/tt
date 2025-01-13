@@ -16,13 +16,19 @@ class Project(JsonSerializable):
     When external source changes it can record new version; thus keeping all previous versions available.
     """
 
-    def __init__(self, *, projects_dir: Path, name: str, implied_dt: float, latest_traces_version: int):
+    def __init__(self, *,
+                 projects_dir: Path,
+                 name: str,
+                 implied_dt: float,
+                 latest_traces_version: int,
+                 description: str):
         self.project_dir = projects_dir / name
         self.project_json_file = self.project_dir / "project.json"
         self.__name = name
         self.trace_source = NullTraceSource(self)
         self.__implied_dt = implied_dt
         self.latest_traces_version = latest_traces_version
+        self.__description = description
 
     def exists(self) -> bool:
         """
@@ -38,6 +44,15 @@ class Project(JsonSerializable):
             self.project_dir.mkdir()
 
         self.project_json_file.write_text(self.to_json())
+
+    @property
+    def description(self) -> str:
+        return self.__description
+
+    @description.setter
+    def description(self, description: str) -> None:
+        self.__description = description
+        self.persist()
 
     @property
     def name(self) -> str:
@@ -77,6 +92,7 @@ class Project(JsonSerializable):
             "implied_dt": self.__implied_dt,
             "latest_traces_version": self.latest_traces_version,
             "trace_source": self.trace_source.to_dict(),
+            "description": self.__description
         }
 
     def set_trace_source_from_csv_file(self, file: Path) -> None:
@@ -177,7 +193,8 @@ class ProjectManager:
                 projects_dir = self.__projects_dir,
                 name = data["name"],
                 implied_dt = data["implied_dt"],
-                latest_traces_version = data["latest_traces_version"]
+                latest_traces_version = data["latest_traces_version"],
+                description = data["description"],
             )
             project.set_trace_source_from_config()
             return project
@@ -192,26 +209,11 @@ class ProjectManager:
             projects_dir = self.__projects_dir,
             name = project_name,
             implied_dt = 1,
-            latest_traces_version = 0
+            latest_traces_version = 0,
+            description = ""
         )
         if project.exists():
             raise RuntimeError(f"Project [{project_name}] already exists.")
         else:
             project.persist()
             return project
-
-
-if __name__ == '__main__':
-    pm = ProjectManager(Path.home() / ".tt" / "projects")
-    print(pm.list_project_names())
-
-    project: Project = pm.create_new_project("foobar1")
-    # project: Project = pm.open_existing_project("pds")
-    project.set_trace_source_from_csv_file(Path.home() / "Downloads" / "iladata.csv")
-    print(project.load_traces())
-    # trs = project.traces(-1)
-    # trs[-2].label = "xyz"
-    # trs[-1].state = TraceState.INACTIVE
-    # project.implied_dt = 1
-    # print(trs[-1].xy)
-    # project.name = "pds"
