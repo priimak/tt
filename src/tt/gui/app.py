@@ -23,6 +23,7 @@ class App:
         self.rename_opened_project_menu_disable: Callable[[], None] = lambda: None
         self.delete_opened_project_menu_enable: Callable[[], None] = lambda: None
         self.delete_opened_project_menu_disable: Callable[[], None] = lambda: None
+        self.notify_tables_require_change: Callable[[], None] = lambda: None
 
     def set_new_open_project(self, project: Project) -> None:
         self.project = project
@@ -32,3 +33,4 @@ class App:
         self.set_showing_version_label(f"Traces Version #{project.latest_traces_version}")
         self.delete_opened_project_menu_enable()
         self.rename_opened_project_menu_enable()
+        self.notify_tables_require_change()

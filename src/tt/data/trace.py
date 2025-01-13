@@ -5,6 +5,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+import matplotlib.pyplot as plt
 import polars
 from polars import DataFrame
 
@@ -143,6 +144,12 @@ class Trace(JsonSerializable):
     def xy(self) -> tuple[list[float], list[float]]:
         dt = self.__config.dt()
         return self.__t(dt, len(self.y)), self.y
+
+    def show_in_new_window(self):
+        fig, ax = plt.subplots()
+        t, v = self.xy
+        ax.plot(t, v, "-")
+        plt.show()
 
 
 @dataclass

@@ -4,8 +4,10 @@ from pytide6 import MainWindow, set_geometry, VBoxPanel, Panel
 from sprats.config import AppPersistence
 
 from src.tt.gui.app import App
+from tt.data.trace import TraceState
 from tt.gui.menus.menu_bar import MainMenuBar
 from tt.gui.panels.info_panel import InfoPanel
+from tt.gui.panels.traces_panel import TracesPanel
 
 
 class TTMainWindow(MainWindow):
@@ -26,9 +28,10 @@ class TTMainWindow(MainWindow):
 
         main_widget = QTabWidget()
         # noinspection PyTypeChecker
-        main_widget.addTab(Panel(QVBoxLayout()), "Active Traces")
-        main_widget.addTab(Panel(QVBoxLayout()), "Inactive Traces")
+        main_widget.addTab(TracesPanel(self.app, TraceState.ACTIVE), "Active Traces")
+        main_widget.addTab(TracesPanel(self.app, TraceState.INACTIVE), "Inactive Traces")
         main_widget.addTab(Panel(QVBoxLayout()), "Views")
+        main_widget.addTab(Panel(QVBoxLayout()), "Project")
 
         self.setCentralWidget(
             VBoxPanel(

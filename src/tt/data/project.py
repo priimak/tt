@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from tt.data.jsonable import JsonSerializable
-from tt.data.trace import Trace, TracesConfig
+from tt.data.trace import Trace, TracesConfig, TraceState
 from tt.data.trace_source import TraceSource, NullTraceSource, CSVFileTraceSource
 
 
@@ -129,17 +129,21 @@ class Project(JsonSerializable):
         else:
             return False
 
-    def traces(self, version: int) -> list[Trace]:
+    def traces(self, version: int, state: TraceState | None = None) -> list[Trace]:
         """
         Returns list of Trace(s) for a given version. Version can be negative in which
         case it refers to index from the right simular to indexing in python arrays. This version -1 refers to
         the latest version, version -2 to the previous one and so on.
         """
-        return TracesConfig(
+        traces = TracesConfig(
             config_file = self.project_dir / "data" / "config.json",
             latest_traces_version = self.latest_traces_version,
             dt = lambda: self.__implied_dt
         ).get_traces(version)
+        if state is None:
+            return traces
+        else:
+            return [t for t in traces if t.state == state]
 
 
 class ProjectManager:
