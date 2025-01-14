@@ -13,6 +13,7 @@ class App:
         self.config = app_persistence.config
         self.state = app_persistence.state
         self.project: Optional[Project] = None
+        self.__ref_change_id: float | None = None
 
         self.exit_application: Callable[[], bool] = lambda: True
         self.show_error: Callable[[str], None] = lambda _: None
@@ -35,3 +36,11 @@ class App:
         self.notify_tables_require_change()
         self.notify_project_panel_on_project_load()
         self.reload_traces_menu_enable()
+        self.set_reference_change_id(project.trace_source.change_id())
+        self.app_persistence.config.set_value("last_opened_project", project.name)
+
+    def set_reference_change_id(self, change_id: float) -> None:
+        self.__ref_change_id = change_id
+
+    def get_reference_change_id(self) -> float | None:
+        return self.__ref_change_id

@@ -160,3 +160,17 @@ class TraceDataVersioned:
 @dataclass
 class TracesDataVersioned:
     trace_data: dict[str, TraceDataVersioned]
+
+
+class Traces:
+    def __init__(self, traces: list[Trace]):
+        self.__traces = traces
+
+    def show_in_new_window(self, show_legends: bool = True) -> None:
+        fig, ax = plt.subplots()
+        for trace in self.__traces:
+            t, v = trace.xy
+            ax.plot(t, v, "-", label = f"{trace.label} # {trace.version}")
+        if show_legends:
+            plt.legend(loc = "upper right")
+        plt.show()

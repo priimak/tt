@@ -20,12 +20,18 @@ def main():
         init_config_data = {
             "max_last_opened_files": 10,
             "open_last_opened_project_on_load": True,
-            "watch_for_source_changes": True
+            "watch_for_source_changes": True,
+            "last_opened_project": ""
         }
     )
     win = TTMainWindow(screen_dim = (screen_width, screen_height), app_persistence = persistence)
     win.show()
     # win.app.reopen_last_opened_file()
+    if persistence.config.get_value("open_last_opened_project_on_load", bool):
+        last_opened_project_name = persistence.config.get_value("last_opened_project", str)
+        if last_opened_project_name is not None and last_opened_project_name.strip() != "":
+            project = win.app.pm.open_existing_project(last_opened_project_name)
+            win.app.set_new_open_project(project)
 
     sys.exit(app.exec())
 

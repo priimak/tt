@@ -62,9 +62,10 @@ class CreateNewProject(Dialog):
             else:
                 project = app.pm.create_new_project(new_project_name)
                 project.set_trace_source_from_csv_file(Path(cvs_file_name))
-                project.load_traces()
-                self.close()
+                _, change_id = project.load_traces()
+                app.set_reference_change_id(change_id)
                 app.set_new_open_project(project)
+                self.close()
 
         self.setLayout(VBoxLayout(
             widgets = [

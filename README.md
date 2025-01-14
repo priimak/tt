@@ -2,4 +2,4 @@
 
 ![](./tt.png)
 
-Chipscope and oscilloscope trace viewer and annotator.
+Chipscope trace viewer and annotator.

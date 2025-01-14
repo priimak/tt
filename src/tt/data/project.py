@@ -107,14 +107,14 @@ class Project(JsonSerializable):
         self.trace_source = TraceSource.from_config(data["trace_source"], self)
         self.persist()
 
-    def load_traces(self) -> bool:
+    def load_traces(self) -> tuple[bool, float]:
         """
         Loads traces into project persistent store and updates "latest_traces_version". If traces were
         previously loaded and source did not change, then nothing will be loaded and False returned.
         False is also returned if trace source is NullTraceSource.
         """
         if self.trace_source.is_null_trace_source():
-            return False
+            return False, self.trace_source.change_id()
 
         elif self.latest_traces_version == 0 or self.trace_source.has_changed():
             df = self.trace_source.load_data()
@@ -140,12 +140,12 @@ class Project(JsonSerializable):
                 }
                 (target_dir / "config.json").write_text(json.dumps(versioned_config, indent = 2))
 
-            return True
+            return True, self.trace_source.change_id()
 
         else:
-            return False
+            return False, self.trace_source.change_id()
 
-    def traces(self, version: int, state: TraceState | None = None) -> list[Trace]:
+    def traces(self, version: int, state: TraceState | None = None, trace_name: str | None = None) -> list[Trace]:
         """
         Returns list of Trace(s) for a given version. Version can be negative in which
         case it refers to index from the right simular to indexing in python arrays. This version -1 refers to
@@ -156,10 +156,11 @@ class Project(JsonSerializable):
             latest_traces_version = self.latest_traces_version,
             dt = lambda: self.__implied_dt
         ).get_traces(version)
-        if state is None:
+        traces = traces if state is None else [t for t in traces if t.state == state]
+        if trace_name is None:
             return traces
         else:
-            return [t for t in traces if t.state == state]
+            return [t for t in traces if t.name == trace_name]
 
 
 class ProjectManager:
