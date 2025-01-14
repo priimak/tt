@@ -41,7 +41,7 @@ class Project(JsonSerializable):
         When changes are made to the project properties this function is called to save it (persist) to the disk.
         """
         if not self.project_dir.exists():
-            self.project_dir.mkdir()
+            self.project_dir.mkdir(parents = True, exist_ok = True)
 
         self.project_json_file.write_text(self.to_json())
 

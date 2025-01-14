@@ -14,7 +14,7 @@ class SelectTracesVersionsDialg(Dialog):
     def __init__(self, parent, app: App, trace_name: str):
         super().__init__(parent, windowTitle = "Select traces version", modal = True)
 
-        trace_versions_to_plot = LineTextInput("Pick trace versions to plot", "0,-1")
+        trace_versions_to_plot = LineTextInput("Pick trace versions to plot", "1,-1")
 
         def on_ok():
             version_str = trace_versions_to_plot.text().strip()
