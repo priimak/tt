@@ -4,7 +4,7 @@ from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QApplication
 from sprats.config import AppPersistence
 
-from src.tt.gui.main_window import TTMainWindow
+from tt.gui.main_window import TTMainWindow
 
 
 def main():

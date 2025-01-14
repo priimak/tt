@@ -5,8 +5,8 @@ from pytide6.buttons import PushButton
 from pytide6.panel_widget import W, HBoxPanel
 from sprats.config import AppPersistence
 
-from src.tt.gui.app import App
 from tt.data.trace import TraceState
+from tt.gui.app import App
 from tt.gui.menus.menu_bar import MainMenuBar
 from tt.gui.panels.info_panel import InfoPanel
 from tt.gui.panels.project_panel import ProjectPanel
