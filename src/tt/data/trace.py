@@ -149,7 +149,9 @@ class Trace(JsonSerializable):
         fig, ax = plt.subplots()
         t, v = self.xy
         ax.plot(t, v, "-")
-        plt.show()
+        if fig.canvas.manager is not None:
+            fig.canvas.manager.set_window_title(f"{self.label}")
+        fig.show()
 
 
 @dataclass
@@ -173,4 +175,6 @@ class Traces:
             ax.plot(t, v, "-", label = f"{trace.label} # {trace.version}")
         if show_legends:
             plt.legend(loc = "upper right")
-        plt.show()
+        if fig.canvas.manager is not None:
+            fig.canvas.manager.set_window_title(f"{self.__traces[0].label}")
+        fig.show()

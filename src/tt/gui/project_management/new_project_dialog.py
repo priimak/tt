@@ -2,9 +2,10 @@ from pathlib import Path
 
 from PySide6 import QtCore
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QSpacerItem, QLabel, QLineEdit, QFileDialog
+from PySide6.QtWidgets import QLabel, QLineEdit, QFileDialog
 from pytide6 import Dialog, VBoxLayout, HBoxPanel, LineTextInput, HBoxLayout, Panel
 from pytide6.buttons import PushButton
+from pytide6.widget_wrapper import W
 
 from tt.gui.app import App
 
@@ -72,7 +73,7 @@ class CreateNewProject(Dialog):
                 project_name_input,
                 file_picker,
                 HBoxPanel([
-                    QSpacerItem,
+                    W(HBoxPanel(), stretch = 1),
                     PushButton("Ok", on_clicked = do_create_new_project, auto_default = True),
                     PushButton("Cancel", on_clicked = lambda: self.close())
                 ])

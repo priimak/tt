@@ -1,9 +1,10 @@
 from typing import override, Any
 
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex
-from PySide6.QtWidgets import QTableView, QSpacerItem, QAbstractItemView
+from PySide6.QtWidgets import QTableView, QAbstractItemView, QHeaderView
 from pytide6 import Dialog, VBoxLayout, HBoxPanel
 from pytide6.buttons import PushButton
+from pytide6.widget_wrapper import W
 
 from tt.gui.app import App
 
@@ -35,13 +36,6 @@ class ProjectsTableModel(QAbstractTableModel):
         else:
             return None
 
-    # # @override
-    # def data2(self, index: QModelIndex, role: int = ...) -> Any:
-    #     if role == Qt.ItemDataRole.DisplayRole:
-    #         return self.project_names[index.row()]
-    #     else:
-    #         return None
-
 
 class OpenProjectDialog(Dialog):
     def __init__(self, parent, app: App):
@@ -54,6 +48,7 @@ class OpenProjectDialog(Dialog):
         table_view.setModel(model)
         table_view.resizeColumnsToContents()
         table_view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table_view.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
         def open_project_by_row(row: int):
             try:
@@ -77,7 +72,7 @@ class OpenProjectDialog(Dialog):
         self.setLayout(VBoxLayout([
             table_view,
             HBoxPanel([
-                QSpacerItem,
+                W(HBoxPanel(), stretch = 1),
                 PushButton("Ok", on_clicked = open_project, auto_default = True),
                 PushButton("Cancel", on_clicked = lambda: self.close())
             ])
