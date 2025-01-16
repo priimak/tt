@@ -1,5 +1,5 @@
 # TT - Trace Tool
 
-![](./tt.png)
+![](./src/tt/gui/tt.png)
 
 Chipscope trace viewer and annotator.
