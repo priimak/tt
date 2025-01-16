@@ -43,11 +43,9 @@ it from PowerShell by simply typing
 tt
 ```
 
-If new release of Trace Tool is available you can download by running in PowerShell
+If new release of Trace Tool is available you can download it by running in PowerShell
 
 ```shell
 pipx upgrade tt
 ```
-
-## Usage
 
