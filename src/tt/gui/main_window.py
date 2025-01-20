@@ -50,8 +50,8 @@ class TTMainWindow(MainWindow):
     def __init__(self, screen_dim: tuple[int, int], app_persistence: AppPersistence):
         super().__init__(objectName = "MainWindow", windowTitle = "Trace Tool")
         from PySide6.QtGui import QIcon
-        tt_png = Path(__file__) / "tt.png"
-        self.setWindowIcon(QIcon(f"{tt_png}"))
+        tt_png = Path(__file__).parent / "tt.png"
+        self.setWindowIcon(QIcon(f"{tt_png.absolute()}"))
         self.sync_mutex = QMutex()
 
         self.app = App(app_persistence)

@@ -1,4 +1,6 @@
 # from matplotlib.backends.backend_qt import FigureCanvasQT, NavigationToolbar2QT
+from pathlib import Path
+
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QDialog, QVBoxLayout
 from matplotlib.backends.backend_qtagg import FigureCanvas
@@ -24,7 +26,8 @@ class PlotFigure(QDialog):
 
         self.canvas = FigureCanvas(Figure())
         toolbar = NavigationToolbar(self.canvas, self)
-        action = QAction(QIcon("settings.png"), "Trace Config", self)
+        settings_png = Path(__file__).parent / "settings.png"
+        action = QAction(QIcon(f"{settings_png.absolute()}"), "Trace Config", self)
         action.triggered.connect(self.show_config)
         toolbar.addAction(action)
         layout.addWidget(toolbar)
