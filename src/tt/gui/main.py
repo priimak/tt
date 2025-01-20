@@ -1,6 +1,8 @@
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from sprats.config import AppPersistence
 
@@ -9,6 +11,8 @@ from tt.gui.main_window import TTMainWindow
 
 def main():
     app = QApplication(sys.argv)
+    tt_png = Path(__file__).parent / "tt.png"
+    app.setWindowIcon(QIcon(f"{tt_png.absolute()}"))
 
     # Will init main window size to be some fraction of the screen size unless defined elsewhere
     screen_dim: QSize = app.primaryScreen().size()

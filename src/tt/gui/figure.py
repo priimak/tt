@@ -1,8 +1,9 @@
 # from matplotlib.backends.backend_qt import FigureCanvasQT, NavigationToolbar2QT
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QAction
-from PySide6.QtWidgets import QDialog, QVBoxLayout
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
@@ -12,15 +13,14 @@ from matplotlib.lines import Line2D
 from tt.gui.trace_config_dialog import TraceConfigDialog
 
 
-class PlotFigure(QDialog):
+class PlotFigure(QWidget):
     def __init__(self, main_window, raw_trace):
         super().__init__(main_window)
-
+        self.setWindowFlags(Qt.WindowType.Window)
         from tt.data.trace import Trace
         self.trace: Trace = raw_trace
 
-        self.setWindowTitle(f"Trace: {self.trace.label}")
-        self.setModal(False)
+        self.setWindowTitle(f"Trace: {self.trace.label} # {self.trace.version}")
 
         layout = QVBoxLayout()
 

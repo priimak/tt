@@ -122,7 +122,9 @@ class TracesView(QTableView):
     def render_latest_trace(self) -> None:
         selection = self.selectedIndexes()
         if selection != [] and self.app.project is not None:
-            self.app.project.traces(-1, self.trace_state)[selection[0].row()].show_in_new_window(self.app.main_window())
+            self.app.project.traces(-1, self.trace_state)[selection[0].row()].show_in_new_window(
+                self.app.main_window(), self.app.super_parent()
+            )
 
     def render_latest_and_previous_trace(self) -> None:
         selection = self.selectedIndexes()

@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Callable, Optional
 
+from PySide6.QtWidgets import QWidget
 from pytide6 import MainWindow
 from sprats.config import AppPersistence
 
@@ -29,6 +30,7 @@ class App:
         self.notify_project_panel_on_project_load: Callable[[], None] = lambda: None
 
         self.main_window: Callable[[], MainWindow] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
+        self.super_parent: Callable[[], QWidget] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
 
     def set_new_open_project(self, project: Project) -> None:
         self.project = project

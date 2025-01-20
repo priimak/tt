@@ -7,7 +7,10 @@ from typing import Any, Callable, Optional
 
 import matplotlib.pyplot as plt
 import polars
+from PySide6.QtCore import QRect
+from PySide6.QtWidgets import QWidget
 from polars import DataFrame
+from pytide6 import MainWindow
 
 from tt.data.jsonable import JsonSerializable
 from tt.gui.figure import PlotFigure
@@ -221,9 +224,15 @@ class Trace(JsonSerializable):
         dt = self.__config.dt()
         return self.__t(dt, len(self.y)), [(self.y_scale * v + self.y_offset) for v in self.y]
 
-    def show_in_new_window(self, main_window):
-        f = PlotFigure(main_window, self)
+    def show_in_new_window(self, main_window: MainWindow, super_parent: QWidget):
+        main_window_geometry = main_window.geometry()
+        f = PlotFigure(super_parent, self)
         f.show()
+        figure_geometry: QRect = f.geometry()
+        f.move(
+            main_window_geometry.center().x() - int(figure_geometry.width() / 2),
+            main_window_geometry.center().y() - int(figure_geometry.height() / 2)
+        )
 
 
 @dataclass
