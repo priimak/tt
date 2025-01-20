@@ -226,7 +226,7 @@ class Trace(JsonSerializable):
 
     def show_in_new_window(self, main_window: MainWindow, super_parent: QWidget):
         main_window_geometry = main_window.geometry()
-        f = PlotFigure(super_parent, self)
+        f = PlotFigure(super_parent, self, main_window.app)  # pyright: ignore [reportAttributeAccessIssue]
         f.show()
         figure_geometry: QRect = f.geometry()
         f.move(
