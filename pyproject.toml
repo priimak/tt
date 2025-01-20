@@ -9,7 +9,7 @@ dependencies = [
     "returns==0.24.0",
     "polars==1.14.0",
     "matplotlib==3.10.0",
-    "pytide6 @ git+https://github.com/priimak/PyTide6.git@v0.2.0"
+    "pytide6 @ git+https://github.com/priimak/PyTide6.git@v0.3.0"
 ]
 
 [build-system]
@@ -21,6 +21,9 @@ enabled = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.png"]
 
 [project.scripts]
 tt = "tt.gui.main:main"

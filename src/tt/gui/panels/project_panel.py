@@ -54,6 +54,7 @@ class RenameProjectDialog(Dialog):
                     app.show_error("Project under this name already exists")
                 else:
                     app.project.name = new_name
+                    app.config.set_value("last_opened_project", new_name)
                     app.notify_project_panel_on_project_load()
                     self.close()
 

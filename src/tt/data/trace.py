@@ -10,11 +10,27 @@ import polars
 from polars import DataFrame
 
 from tt.data.jsonable import JsonSerializable
+from tt.gui.figure import PlotFigure
 
 
 class TraceState(StrEnum):
     ACTIVE = "Active"
     INACTIVE = "Inactive"
+
+
+class TraceConfig:
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+
+    def get_value[T](self, name: str, default_value: T) -> T:
+        if name not in self.cfg:
+            return default_value
+        else:
+            value = self.cfg[name]
+            if isinstance(value, default_value.__class__):
+                return value
+            else:
+                raise RuntimeError(f"Invalid type [{value.__class__}] for config value [{name}]")
 
 
 class TracesConfig(JsonSerializable):
@@ -36,10 +52,18 @@ class TracesConfig(JsonSerializable):
 
     def save(self, trace: "Trace") -> None:
         traces = self.get_traces(-1)
-        for t in traces:
-            if t.name == trace.name:
-                t._label = trace.label
-                t._state = trace.state
+        t = traces[trace.index]
+        t._label = trace.label
+        t._state = trace.state
+        t.show_legend = trace.show_legend
+        t.legend_location = trace.legend_location
+        t.x_label = trace.x_label
+        t.y_label = trace.y_label
+        t.title = trace.title
+        t.show_grid = trace.show_grid
+        t.y_scale = trace.y_scale
+        t.y_offset = trace.y_offset
+
         self.config_file.write_text(json.dumps({
             "traces": [t.to_dict() for t in traces]
         }, indent = 2))
@@ -54,11 +78,8 @@ class TracesConfig(JsonSerializable):
 
         tr_config = json.loads(self.config_file.read_text())
         traces = []
-        for tr in tr_config["traces"]:
-            state = TraceState.ACTIVE if tr["state"] == TraceState.ACTIVE.value else TraceState.INACTIVE
-            traces.append(
-                Trace(name = tr["name"], label = tr["label"], state = state, version = version, config = self)
-            )
+        for tr in enumerate(tr_config["traces"]):
+            traces.append(Trace(version = version, config = self, tcf = TraceConfig(tr[1]), index = tr[0]))
         return traces
 
     def get_trace_by_name(self, version: int, name: str) -> Optional["Trace"]:
@@ -71,13 +92,60 @@ class TracesConfig(JsonSerializable):
 
 
 class Trace(JsonSerializable):
-    def __init__(self, name: str, label: str, state: TraceState, version: int, config: TracesConfig):
-        self.__name = name
-        self._label = label
-        self._state = state
+    def __init__(self, version: int, config: TracesConfig, tcf: TraceConfig, index: int):
+        self.tcf = tcf
+        self.index = index
+        self.__name = tcf.get_value("name", "Unknown")
+        self._label = tcf.get_value("label", "Unknown")
+
+        tr_state = tcf.get_value("state", "Active")
+        self._state = TraceState.ACTIVE if tr_state == TraceState.ACTIVE.value else TraceState.INACTIVE
+
+        self.show_legend = tcf.get_value("show_legend", False)
+        self.legend_location = tcf.get_value("legend_location", "Best")
+        self.x_label = self.tcf.get_value("x_label", "t")
+        self.y_label = self.tcf.get_value("y_label", f"{self._label}")
+        self.title = self.tcf.get_value("title", self._label)
+        self.show_grid = tcf.get_value("show_grid", False)
+
+        self.y_scale = tcf.get_value("y_scale", 1.0)
+        self.y_offset = tcf.get_value("y_offset", 0.0)
+
         self.version = version
         self.__config = config
         self.__versioned_config_file = self.__config.config_file.parent / f"{self.version:05}" / "config.json"
+
+    def set_y_scale(self, y_scale: str) -> None:
+        self.y_scale = float(y_scale)
+        self.persist()
+
+    def set_y_offset(self, y_offset: str) -> None:
+        self.y_offset = float(y_offset)
+        self.persist()
+
+    def set_x_label(self, label: str) -> None:
+        self.x_label = label
+        self.persist()
+
+    def set_y_label(self, label: str) -> None:
+        self.y_label = label
+        self.persist()
+
+    def set_show_grid(self, show_grid: bool) -> None:
+        self.show_grid = show_grid
+        self.persist()
+
+    def set_show_legend(self, show_legend_value: bool) -> None:
+        self.show_legend = show_legend_value
+        self.persist()
+
+    def set_legend_location(self, legend_location: str) -> None:
+        self.legend_location = legend_location
+        self.persist()
+
+    def set_title(self, title: str) -> None:
+        self.title = title
+        self.persist()
 
     @property
     def name(self) -> str:
@@ -88,6 +156,14 @@ class Trace(JsonSerializable):
             "name": self.__name,
             "label": self.label,
             "state": self._state.value,
+            "show_legend": self.show_legend,
+            "legend_location": self.legend_location,
+            "x_label": self.x_label,
+            "y_label": self.y_label,
+            "title": self.title,
+            "show_grid": self.show_grid,
+            "y_scale": self.y_scale,
+            "y_offset": self.y_offset,
         }
 
     def __repr__(self):
@@ -143,15 +219,11 @@ class Trace(JsonSerializable):
     @property
     def xy(self) -> tuple[list[float], list[float]]:
         dt = self.__config.dt()
-        return self.__t(dt, len(self.y)), self.y
+        return self.__t(dt, len(self.y)), [(self.y_scale * v + self.y_offset) for v in self.y]
 
-    def show_in_new_window(self):
-        fig, ax = plt.subplots()
-        t, v = self.xy
-        ax.plot(t, v, "-")
-        if fig.canvas.manager is not None:
-            fig.canvas.manager.set_window_title(f"{self.label}")
-        fig.show()
+    def show_in_new_window(self, main_window):
+        f = PlotFigure(main_window, self)
+        f.show()
 
 
 @dataclass

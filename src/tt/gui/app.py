@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Callable, Optional
 
+from pytide6 import MainWindow
 from sprats.config import AppPersistence
 
 from tt.data.project import ProjectManager, Project
@@ -26,6 +27,8 @@ class App:
         self.delete_opened_project_menu_disable: Callable[[], None] = lambda: None
         self.notify_tables_require_change: Callable[[], None] = lambda: None
         self.notify_project_panel_on_project_load: Callable[[], None] = lambda: None
+
+        self.main_window: Callable[[], MainWindow] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
 
     def set_new_open_project(self, project: Project) -> None:
         self.project = project
