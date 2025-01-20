@@ -1,6 +1,4 @@
-![](./src/tt/gui/tt.png)
-
-# ChipScope trace viewer and annotator.
+# _Trace Tool_ - ChipScope trace viewer and annotator.
 
 ## Introduction
 
