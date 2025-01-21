@@ -152,7 +152,7 @@ class PlotFigure(QWidget):
             else:
                 self.plt2 = self.ax.plot(x, y, "-", label = f"{self.trace.label} # {self.trace.version}")
 
-        if self.trace_1 is not None and self.trace is not None:
+        if self.trace_1 is not None or self.trace is not None:
             self.legend: Legend = self.ax.legend()
             self.legend.set_loc(self.original_trace.legend_location.lower())
             self.legend.set_visible(self.original_trace.show_legend)
