@@ -1,6 +1,4 @@
-![](./src/tt/gui/tt.png)
-
-# ChipScope trace viewer and annotator.
+# _Trace Tool_ - ChipScope trace viewer and annotator.
 
 ## Introduction
 
@@ -19,6 +17,8 @@ how any given trace looked like before and after some change to the Verilog code
 "_Trace Tool_" (TT), is an application that addresses above-mentioned issues and also provides additional
 functionality of annotating traces, creating trace views for presentation and analysis, tracking history of any
 given trace and so on.
+
+_Trace Tool_ video tutorials are available [here](https://www.youtube.com/playlist?list=PLuVYFVxWtoLoIKM2r9DybxRjwBMfGenff)
 
 ## Installation
 

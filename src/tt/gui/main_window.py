@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal, QTimer, QMutex
-from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QTabWidget, QLabel
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QTabWidget, QLabel, QWidget
 from pytide6 import MainWindow, set_geometry, VBoxPanel, Panel, Dialog, VBoxLayout
 from pytide6.buttons import PushButton
 from pytide6.panel_widget import W, HBoxPanel
@@ -49,13 +50,17 @@ class TTMainWindow(MainWindow):
 
     def __init__(self, screen_dim: tuple[int, int], app_persistence: AppPersistence):
         super().__init__(objectName = "MainWindow", windowTitle = "Trace Tool")
-        from PySide6.QtGui import QIcon
+
+        self.super_parent = QWidget()
+
         tt_png = Path(__file__).parent / "tt.png"
         self.setWindowIcon(QIcon(f"{tt_png.absolute()}"))
         self.sync_mutex = QMutex()
 
         self.app = App(app_persistence)
         self.app.main_window = lambda: self
+        self.app.super_parent = lambda: self.super_parent
+
         set_geometry(app_state = app_persistence.state, widget = self, screen_dim = screen_dim)
 
         self.signal_show_error.connect(self.show_error)
