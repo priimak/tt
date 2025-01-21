@@ -18,6 +18,8 @@ how any given trace looked like before and after some change to the Verilog code
 functionality of annotating traces, creating trace views for presentation and analysis, tracking history of any
 given trace and so on.
 
+_Trace Tool_ video tutorials are available [here](https://www.youtube.com/playlist?list=PLuVYFVxWtoLoIKM2r9DybxRjwBMfGenff)
+
 ## Installation
 
 Trace Tool is written in python 3.13 and can be installed on Windows, Mac or Linux. Snippets below address Windows
