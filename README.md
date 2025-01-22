@@ -18,34 +18,38 @@ how any given trace looked like before and after some change to the Verilog code
 functionality of annotating traces, creating trace views for presentation and analysis, tracking history of any
 given trace and so on.
 
-_Trace Tool_ video tutorials are available [here](https://www.youtube.com/playlist?list=PLuVYFVxWtoLoIKM2r9DybxRjwBMfGenff)
+_Trace Tool_ video tutorials are
+available [here](https://www.youtube.com/playlist?list=PLuVYFVxWtoLoIKM2r9DybxRjwBMfGenff)
 
 ## Installation
 
 Trace Tool is written in python 3.13 and can be installed on Windows, Mac or Linux. Snippets below address Windows
 installation.
 
-First you need to ensure that you have installed:
-
-1. [Python 3.13](https://www.python.org/downloads/release/python-3131/)
-2. [pipx](https://pipx.pypa.io/stable/)
-
-Once above is complete open PowerShell window and run
+First you need to ensure that [uv](https://docs.astral.sh/uv/) (application for managing python
+and python based applications) is installed. You can skip this step if `uv` is already installed.
 
 ```shell
-pipx install --python 3.13 git+https://github.com/priimak/tt.git@release
+winget install --id=astral-sh.uv  -e
 ```
 
-This will install latest release of trace tool and make it available as `tt.exe` in PowerShell. You can now run
-it from PowerShell by simply typing
+Once `uv` is installed run
+
+```shell
+uv tool install --cache-dir .cache -p 3.13.1 --force git+https://github.com/priimak/tt.git@release 
+```
+
+This will install latest release of _Trace Tool_. It will be available as `tt.exe` in PowerShell.
+You can now run it from PowerShell by simply typing
 
 ```shell
 tt
 ```
 
-If new release of Trace Tool is available you can download it by running in PowerShell
+If new release of Trace Tool is available, you can update previously installed version to the
+latest one by running following command in PowerShell
 
 ```shell
-pipx upgrade tt
+uv tool upgrade tt
 ```
 
