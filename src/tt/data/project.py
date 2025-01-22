@@ -21,12 +21,14 @@ class Project(JsonSerializable):
                  name: str,
                  implied_dt: float,
                  latest_traces_version: int,
-                 description: str):
+                 description: str,
+                 dt_unit: str):
         self.project_dir = projects_dir / name
         self.project_json_file = self.project_dir / "project.json"
         self.__name = name
         self.trace_source = NullTraceSource(self)
         self.__implied_dt = implied_dt
+        self.__dt_unit = dt_unit
         self.latest_traces_version = latest_traces_version
         self.__description = description
 
@@ -44,6 +46,15 @@ class Project(JsonSerializable):
             self.project_dir.mkdir(parents = True, exist_ok = True)
 
         self.project_json_file.write_text(self.to_json())
+
+    @property
+    def dt_unit(self) -> str:
+        return self.__dt_unit
+
+    @dt_unit.setter
+    def dt_unit(self, dt_unit: str) -> None:
+        self.__dt_unit = dt_unit
+        self.persist()
 
     @property
     def description(self) -> str:
@@ -90,6 +101,7 @@ class Project(JsonSerializable):
             "name": self.__name,
             "dir": f"{self.project_dir}",
             "implied_dt": self.__implied_dt,
+            "dt_unit": self.dt_unit,
             "latest_traces_version": self.latest_traces_version,
             "trace_source": self.trace_source.to_dict(),
             "description": self.__description
@@ -196,6 +208,7 @@ class ProjectManager:
                 implied_dt = data["implied_dt"],
                 latest_traces_version = data["latest_traces_version"],
                 description = data["description"],
+                dt_unit = data.get("dt_unit", "ms"),
             )
             project.set_trace_source_from_config()
             return project
@@ -211,7 +224,8 @@ class ProjectManager:
             name = project_name,
             implied_dt = 1,
             latest_traces_version = 0,
-            description = ""
+            description = "",
+            dt_unit = "ms"
         )
         if project.exists():
             raise RuntimeError(f"Project [{project_name}] already exists.")
