@@ -13,6 +13,7 @@ from polars import DataFrame
 from pytide6 import MainWindow
 
 from tt.data.jsonable import JsonSerializable
+from tt.data.overlays import Overlay, OverlayNone, OverlaySavitzkyGolay
 from tt.gui.figure import PlotFigure
 
 
@@ -34,6 +35,19 @@ class TraceConfig:
                 return value
             else:
                 raise RuntimeError(f"Invalid type [{value.__class__}] for config value [{name}]")
+
+    def get_overlay(self) -> Overlay:
+        overlay_data = self.cfg.get("overlay")
+        if overlay_data is None:
+            return OverlayNone()
+        else:
+            match overlay_data.get("filter_name"):
+                case "None":
+                    return OverlayNone()
+                case "Savitzky–Golay":
+                    return OverlaySavitzkyGolay(overlay_data["window_length"], overlay_data["polyorder"])
+                case _:
+                    return OverlayNone()
 
 
 class TracesConfig(JsonSerializable):
@@ -66,6 +80,7 @@ class TracesConfig(JsonSerializable):
         t.show_grid = trace.show_grid
         t.y_scale = trace.y_scale
         t.y_offset = trace.y_offset
+        t.overlay = trace.overlay
 
         self.config_file.write_text(json.dumps({
             "traces": [t.to_dict() for t in traces]
@@ -114,9 +129,15 @@ class Trace(JsonSerializable):
         self.y_scale = tcf.get_value("y_scale", 1.0)
         self.y_offset = tcf.get_value("y_offset", 0.0)
 
+        self.overlay: Overlay = tcf.get_overlay()
+
         self.version = version
         self.__config = config
         self.__versioned_config_file = self.__config.config_file.parent / f"{self.version:05}" / "config.json"
+
+    def set_overlay(self, overlay: Overlay) -> None:
+        self.overlay = overlay
+        self.persist()
 
     def set_y_scale(self, y_scale: str) -> None:
         self.y_scale = float(y_scale)
@@ -167,6 +188,7 @@ class Trace(JsonSerializable):
             "show_grid": self.show_grid,
             "y_scale": self.y_scale,
             "y_offset": self.y_offset,
+            "overlay": self.overlay.to_dict()
         }
 
     def __repr__(self):

@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLineEdit, QTextEdit, QLabel
+from PySide6.QtWidgets import QLineEdit, QTextEdit, QLabel, QComboBox
 from pytide6 import VBoxPanel, HBoxPanel, Label, Dialog, LineTextInput, VBoxLayout
 from pytide6.buttons import PushButton
 from pytide6.widget_wrapper import W
@@ -12,7 +12,11 @@ class ChangeDTDialog(Dialog):
         super().__init__(parent, windowTitle = "Change implied dT", modal = True)
 
         assert app.project is not None
-        implied_dt_input = LineTextInput("Implied dT", f"{app.project.implied_dt}")
+
+        implied_dt_input = QLineEdit(f"{app.project.implied_dt}")
+        dt_unit = QComboBox()
+        dt_unit.addItems(["ns", "us", "ms", "s", "m"])
+        dt_unit.setCurrentText(app.project.dt_unit)
 
         def update_dt():
             try:
@@ -22,13 +26,18 @@ class ChangeDTDialog(Dialog):
                 else:
                     assert app.project is not None
                     app.project.implied_dt = new_implied_dt_value
+                    app.project.dt_unit = dt_unit.currentText()
                     app.notify_project_panel_on_project_load()
                     self.close()
             except ValueError:
                 app.show_error("New implied dT value is not a valid float")
 
         self.setLayout(VBoxLayout([
-            implied_dt_input,
+            HBoxPanel([
+                QLabel("Implied dT"),
+                implied_dt_input,
+                dt_unit
+            ]),
             HBoxPanel([
                 W(HBoxPanel(), stretch = 1),
                 PushButton("Ok", on_clicked = update_dt, auto_default = True),
@@ -117,7 +126,9 @@ class ProjectPanel(VBoxPanel):
 
         def project_changed():
             project_name_line_edit.setText("" if app.project is None else app.project.name)
-            dt_line_edit.setText("1.0" if app.project is None else f"{app.project.implied_dt}")
+            dt_line_edit.setText(
+                "1.0 [ms]" if app.project is None else f"{app.project.implied_dt} [{app.project.dt_unit}]"
+            )
             rename_project_b.setEnabled(app.project is not None)
             self.description_edit.setEnabled(app.project is not None)
             change_dt_b.setEnabled(app.project is not None)

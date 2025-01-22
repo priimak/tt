@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 
+from tt.data.trace import Overlay
 from tt.gui.trace_config_dialog import TraceConfigDialog
 
 
@@ -21,11 +22,11 @@ class PlotFigure(QWidget):
         self.setWindowFlags(Qt.WindowType.Window)
         from tt.data.trace import Trace
         self.original_trace: Trace = raw_trace
-        self.trace: Trace = raw_trace
         self.trace_1: Trace | None = None
+        self.trace_2: Trace = raw_trace
         self.trace_name = raw_trace.name
 
-        self.setWindowTitle(f"Trace: {self.trace.label}")
+        self.setWindowTitle(f"Trace: {self.trace_2.label}")
 
         layout = QVBoxLayout()
 
@@ -43,14 +44,14 @@ class PlotFigure(QWidget):
         v2 = QComboBox(self)
         v2.addItem("None")
         v2.addItems([f"{v}" for v in reversed(range(1, app.project.latest_traces_version + 1))])
-        v2.setCurrentIndex(app.project.latest_traces_version - self.trace.version + 1)
+        v2.setCurrentIndex(app.project.latest_traces_version - self.trace_2.version + 1)
         v2.currentTextChanged.connect(self.set_v2_version)
         toolbar.addWidget(v2)
 
         settings_png = Path(__file__).parent / "settings.png"
-        action = QAction(QIcon(f"{settings_png.absolute()}"), "Trace Config", self)
-        action.triggered.connect(self.show_config)
-        toolbar.addAction(action)
+        config_action = QAction(QIcon(f"{settings_png.absolute()}"), "Trace Config", self)
+        config_action.triggered.connect(self.show_config)
+        toolbar.addAction(config_action)
 
         layout.addWidget(toolbar)
 
@@ -58,17 +59,25 @@ class PlotFigure(QWidget):
 
         layout.addWidget(self.canvas, stretch = 1)
         self.ax = self.canvas.figure.subplots()
-        self.ax.set_title(self.trace.title)
-        self.ax.grid(self.trace.show_grid)
-        self.ax.set_xlabel(self.trace.x_label)
-        self.ax.set_ylabel(self.trace.y_label)
-        x, y = self.trace.xy
+        self.ax.set_title(self.trace_2.title)
+        self.ax.grid(self.trace_2.show_grid)
+        x_label = self.trace_2.x_label
+        if x_label != "":
+            self.ax.set_xlabel(f"{x_label} [{self.app.project.dt_unit}]")
+        self.ax.set_ylabel(self.trace_2.y_label)
+        x, y = self.trace_2.xy
         self.plt1: Line2D | None = None
-        self.plt2: Line2D = self.ax.plot(x, y, "-", label = self.trace.label)
+        self.plt2: Line2D = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
+        self.smooth_enabled = False
         self.legend: Legend = self.ax.legend()
-        self.legend.set_loc(self.trace.legend_location.lower())
-        self.legend.set_visible(self.trace.show_legend)
+        self.legend.set_loc(self.trace_2.legend_location.lower())
+        self.legend.set_visible(self.trace_2.show_legend)
         self.canvas.figure.tight_layout()
+        self.replot_main_trace()
+
+    def set_overlay(self, overlay: Overlay):  # pyright: ignore [reportUndefinedVariable]
+        self.original_trace.set_overlay(overlay)
+        self.replot_main_trace()
 
     def show_config(self):
         TraceConfigDialog(self).show()
@@ -84,7 +93,10 @@ class PlotFigure(QWidget):
         self.canvas.draw()
 
     def set_x_label(self, label: str) -> None:
-        self.ax.set_xlabel(label)
+        if label != "":
+            self.ax.set_xlabel(f"{label} [{self.app.project.dt_unit}]")
+        else:
+            self.ax.set_xlabel(label)
         self.original_trace.set_x_label(label)
         self.canvas.figure.tight_layout()
         self.canvas.draw()
@@ -110,8 +122,8 @@ class PlotFigure(QWidget):
     def set_y_scale(self, y_scale: str) -> None:
         try:
             self.original_trace.set_y_scale(y_scale)
-            if self.trace is not None:
-                self.trace.set_y_scale(y_scale)
+            if self.trace_2 is not None:
+                self.trace_2.set_y_scale(y_scale)
             if self.trace_1 is not None:
                 self.trace_1.set_y_scale(y_scale)
 
@@ -122,8 +134,8 @@ class PlotFigure(QWidget):
     def set_y_offset(self, y_offset: str) -> None:
         try:
             self.original_trace.set_y_offset(y_offset)
-            if self.trace is not None:
-                self.trace.set_y_offset(y_offset)
+            if self.trace_2 is not None:
+                self.trace_2.set_y_offset(y_offset)
             if self.trace_1 is not None:
                 self.trace_1.set_y_offset(y_offset)
             self.replot_main_trace()
@@ -134,25 +146,40 @@ class PlotFigure(QWidget):
         self.ax.clear()
         self.ax.set_title(self.original_trace.title)
         self.ax.grid(self.original_trace.show_grid)
-        self.ax.set_xlabel(self.original_trace.x_label)
+
+        if self.original_trace.x_label != "":
+            assert self.app.project is not None
+            self.ax.set_xlabel(f"{self.original_trace.x_label} [{self.app.project.dt_unit}]")
+        else:
+            self.ax.set_xlabel(self.original_trace.x_label)
         self.ax.set_ylabel(self.original_trace.y_label)
 
         if self.trace_1 is not None:
             x, y = self.trace_1.xy
 
-            if self.trace is None:
-                self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label}")
+            if self.trace_2 is None:
+                self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label}", color = "green")
             else:
-                self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label} # {self.trace_1.version}")
+                self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label} # {self.trace_1.version}",
+                                         color = "green")
 
-        if self.trace is not None:
-            x, y = self.trace.xy
+            y_filtered = self.original_trace.overlay.apply(x, y)
+            if y_filtered is not None:
+                self.ax.plot(x, y_filtered, "-", color = "black")
+
+        if self.trace_2 is not None:
+            x, y = self.trace_2.xy
             if self.trace_1 is None:
-                self.plt2 = self.ax.plot(x, y, "-", label = self.trace.label)
+                self.plt2 = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
             else:
-                self.plt2 = self.ax.plot(x, y, "-", label = f"{self.trace.label} # {self.trace.version}")
+                self.plt2 = self.ax.plot(x, y, "-", label = f"{self.trace_2.label} # {self.trace_2.version}",
+                                         color = "blue")
 
-        if self.trace_1 is not None or self.trace is not None:
+            y_filtered = self.original_trace.overlay.apply(x, y)
+            if y_filtered is not None:
+                self.ax.plot(x, y_filtered, "-", color = "red")
+
+        if self.trace_1 is not None or self.trace_2 is not None:
             self.legend: Legend = self.ax.legend()
             self.legend.set_loc(self.original_trace.legend_location.lower())
             self.legend.set_visible(self.original_trace.show_legend)
@@ -165,11 +192,11 @@ class PlotFigure(QWidget):
         if self.plt2 is not None:
             self.plt2.pop(0).remove()
         if new_version == "None":
-            self.trace = None
+            self.trace_2 = None
             self.plt2 = None
         else:
             assert self.app.project is not None
-            self.trace = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
+            self.trace_2 = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
         self.replot_main_trace()
 
     def set_v1_version(self, new_version: str) -> None:

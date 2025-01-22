@@ -19,7 +19,7 @@ functionality of annotating traces, creating trace views for presentation and an
 given trace and so on.
 
 _Trace Tool_ video tutorials are
-available [here](https://www.youtube.com/playlist?list=PLuVYFVxWtoLoIKM2r9DybxRjwBMfGenff)
+available [here](https://www.youtube.com/playlist?list=PLuVYFVxWtoLoIKM2r9DybxRjwBMfGenff).
 
 ## Installation
 
