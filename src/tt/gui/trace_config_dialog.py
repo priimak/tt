@@ -4,7 +4,7 @@ from pytide6.buttons import PushButton
 from pytide6.inputs import FloatTextInput
 from pytide6.widget_wrapper import W
 
-from tt.data.overlays import OverlaySavitzkyGolay, OverlayNone
+from tt.data.overlays import OverlaySavitzkyGolay, OverlayLowpass, OverlayNone
 
 LEGEND_LOCATIONS = [
     "Best", "Upper Right", "Upper Left", "Lower Left", "Lower Right", "Right", "Center Left",
@@ -32,14 +32,14 @@ class TraceConfigDialog(Dialog):
         filter_name = QComboBox()
         filter_name.addItem("None")
         filter_name.addItem("Savitzky–Golay")
-        # filter_name.addItem("Lowpass")
+        filter_name.addItem("Lowpass")
         # filter_name.addItem("Bandstop")
         filter_name.currentTextChanged.connect(self.process_filter_change)
 
         self.savgol_window_input = LineTextInput("window", on_text_change = self.process_savgol_parameters_change)
         self.savgol_window_input.setVisible(False)
 
-        self.lowpass_freq_cutoff = LineTextInput("Cutoff Frequency")
+        self.lowpass_freq_cutoff = LineTextInput("Cutoff Frequency", on_text_change = self.process_lowpass_param_change)
         self.lowpass_freq_cutoff.setVisible(False)
 
         self.bandstop_freq_1 = LineTextInput("From Freq.")
@@ -53,6 +53,9 @@ class TraceConfigDialog(Dialog):
                 self.savgol_window_input.setText(window_length)
                 self.savgol_window_input.setVisible(True)
                 filter_name.setCurrentIndex(1)
+            case OverlayLowpass():
+                self.lowpass_freq_cutoff.setText(f"{self.figure.original_trace.overlay.frequency}")
+                filter_name.setCurrentIndex(2)
             case _:
                 filter_name.setCurrentIndex(0)
 
@@ -93,6 +96,14 @@ class TraceConfigDialog(Dialog):
             HBoxPanel([W(HBoxPanel(), stretch = 1), PushButton("Ok", on_clicked = self.close)]),
         ]))
 
+    def process_lowpass_param_change(self, freq_value: str) -> None:
+        try:
+            self.figure.original_trace.overlay.set_cutoff_frequency(freq_value)
+            self.figure.replot_main_trace()
+            self.figure.original_trace.persist()
+        except:
+            pass
+
     def process_savgol_parameters_change(self, window_value: str) -> None:
         try:
             if window_value.endswith("%"):
@@ -126,6 +137,11 @@ class TraceConfigDialog(Dialog):
                 self.bandstop_freq_1.setVisible(False)
                 self.bandstop_freq_2.setVisible(False)
                 self.savgol_window_input.setVisible(False)
+
+                if not isinstance(self.figure.original_trace.overlay, OverlayLowpass):
+                    filter = OverlayLowpass.default()
+                    self.figure.set_overlay(filter)
+                    self.lowpass_freq_cutoff.setText(f"{filter.frequency}")
 
             case "Bandstop":
                 self.lowpass_freq_cutoff.setVisible(False)

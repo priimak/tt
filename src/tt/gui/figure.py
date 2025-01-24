@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 
+from tt.data.punits import dt
 from tt.data.trace import Overlay
 from tt.gui.trace_config_dialog import TraceConfigDialog
 
@@ -163,7 +164,10 @@ class PlotFigure(QWidget):
                 self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label} # {self.trace_1.version}",
                                          color = "green")
 
-            y_filtered = self.original_trace.overlay.apply(x, y)
+            assert self.app.project is not None
+            y_filtered = self.original_trace.overlay.apply(
+                dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
+            )
             if y_filtered is not None:
                 self.ax.plot(x, y_filtered, "-", color = "black")
 
@@ -175,7 +179,10 @@ class PlotFigure(QWidget):
                 self.plt2 = self.ax.plot(x, y, "-", label = f"{self.trace_2.label} # {self.trace_2.version}",
                                          color = "blue")
 
-            y_filtered = self.original_trace.overlay.apply(x, y)
+            assert self.app.project is not None
+            y_filtered = self.original_trace.overlay.apply(
+                dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
+            )
             if y_filtered is not None:
                 self.ax.plot(x, y_filtered, "-", color = "red")
 
