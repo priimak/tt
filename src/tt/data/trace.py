@@ -13,7 +13,7 @@ from polars import DataFrame
 from pytide6 import MainWindow
 
 from tt.data.jsonable import JsonSerializable
-from tt.data.overlays import Overlay, OverlayNone, OverlaySavitzkyGolay
+from tt.data.overlays import Overlay, OverlayNone, OverlaySavitzkyGolay, OverlayLowpass
 from tt.gui.figure import PlotFigure
 
 
@@ -46,6 +46,8 @@ class TraceConfig:
                     return OverlayNone()
                 case "Savitzky–Golay":
                     return OverlaySavitzkyGolay(overlay_data["window_length"], overlay_data["polyorder"])
+                case "Lowpass":
+                    return OverlayLowpass(overlay_data["frequency"])
                 case _:
                     return OverlayNone()
 

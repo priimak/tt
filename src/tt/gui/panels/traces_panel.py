@@ -5,6 +5,7 @@ from PySide6.QtGui import QContextMenuEvent
 from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QSpacerItem
 from pytide6 import VBoxPanel, Dialog, VBoxLayout, HBoxPanel, LineTextInput, RichTextLabel
 from pytide6.buttons import PushButton
+from pytide6.widget_wrapper import W
 
 from tt.data.trace import TraceState, Trace, Traces
 from tt.gui.app import App
@@ -61,7 +62,7 @@ class TraceLabelChangeDialog(Dialog):
         self.setLayout(VBoxLayout([
             RichTextLabel(f"Change trace label for trace <em>{trace.name}</em>"),
             trace_label_input,
-            HBoxPanel([QSpacerItem, ok_button, PushButton("Cancel", on_clicked = self.close)])
+            HBoxPanel([W(HBoxPanel(), stretch = 1), ok_button, PushButton("Cancel", on_clicked = self.close)])
         ]))
 
 
