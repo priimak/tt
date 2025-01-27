@@ -16,6 +16,7 @@ class App:
         self.state = app_persistence.state
         self.project: Optional[Project] = None
         self.__ref_change_id: float | None = None
+        self.taces_views_change_id: int = 0
 
         self.exit_application: Callable[[], bool] = lambda: True
         self.show_error: Callable[[str], None] = lambda _: None

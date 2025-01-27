@@ -246,7 +246,7 @@ class Trace(JsonSerializable):
         self.__versioned_config_file.write_text(json.dumps(data, indent = 2))
 
     @property
-    @cache
+    # @cache
     def y(self) -> list[float]:
         df: DataFrame = self.__config.df(self.version)
         y_values = df.get_column(self.name).to_list()
@@ -263,6 +263,7 @@ class Trace(JsonSerializable):
 
     def show_in_new_window(self, main_window: MainWindow, super_parent: QWidget):
         main_window_geometry = main_window.geometry()
+        # f = PlotView(super_parent, main_window.app)
         f = PlotFigure(super_parent, self, main_window.app)  # pyright: ignore [reportAttributeAccessIssue]
         f.show()
         figure_geometry: QRect = f.geometry()
