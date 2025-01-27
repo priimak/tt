@@ -161,6 +161,24 @@ class Project(JsonSerializable):
             target_dir.mkdir(parents = True, exist_ok = True)
             df.write_parquet(file = target_dir / "traces.parquet.lz4", compression = "lz4")
             self.trace_source.update_signature()
+            if "TRIGGER" in df.columns:
+                res = df.get_column("TRIGGER").to_list()
+
+                def get_tdata():
+                    if len(res) > 2:
+                        try:
+                            float(res[1])
+                            return [a[0] for a in enumerate(res[1:]) if a[1] != 0]
+                        except ValueError:
+                            return [a[0] for a in enumerate(res[2:]) if a[1] != 0]
+                    else:
+                        return []
+
+                trigger_index = get_tdata()
+                t0_index = trigger_index[0] if len(trigger_index) > 0 else 0
+                (target_dir / "trigger.json").write_text(json.dumps({"t0_index": t0_index}))
+            else:
+                (target_dir / "trigger.json").write_text(json.dumps({"t0_index": 0}))
             self.persist()
 
             # copy notes from prev
