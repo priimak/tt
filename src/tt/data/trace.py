@@ -83,6 +83,7 @@ class TracesConfig(JsonSerializable):
         t.y_scale = trace.y_scale
         t.y_offset = trace.y_offset
         t.overlay = trace.overlay
+        t.stat_functions = trace.stat_functions.copy()
 
         self.config_file.write_text(json.dumps({
             "traces": [t.to_dict() for t in traces]
@@ -131,11 +132,17 @@ class Trace(JsonSerializable):
         self.y_scale = tcf.get_value("y_scale", 1.0)
         self.y_offset = tcf.get_value("y_offset", 0.0)
 
+        self.stat_functions: list[str] = tcf.get_value("stat_functions", [])
+
         self.overlay: Overlay = tcf.get_overlay()
 
         self.version = version
         self.__config = config
         self.__versioned_config_file = self.__config.config_file.parent / f"{self.version:05}" / "config.json"
+
+    def set_stat_functions(self, stat_functions: list[str]) -> None:
+        self.stat_functions = stat_functions.copy()
+        self.persist()
 
     def set_overlay(self, overlay: Overlay) -> None:
         self.overlay = overlay
@@ -190,7 +197,8 @@ class Trace(JsonSerializable):
             "show_grid": self.show_grid,
             "y_scale": self.y_scale,
             "y_offset": self.y_offset,
-            "overlay": self.overlay.to_dict()
+            "overlay": self.overlay.to_dict(),
+            "stat_functions": self.stat_functions,
         }
 
     def __repr__(self):
@@ -237,7 +245,8 @@ class Trace(JsonSerializable):
     @cache
     def y(self) -> list[float]:
         df: DataFrame = self.__config.df(self.version)
-        return df.get_column(self.name).to_list()
+        y_values = df.get_column(self.name).to_list()
+        return [(self.y_scale * v + self.y_offset) for v in y_values]
 
     @cache
     def __t(self, dt: float, len: int) -> list[float]:
@@ -246,7 +255,7 @@ class Trace(JsonSerializable):
     @property
     def xy(self) -> tuple[list[float], list[float]]:
         dt = self.__config.dt()
-        return self.__t(dt, len(self.y)), [(self.y_scale * v + self.y_offset) for v in self.y]
+        return self.__t(dt, len(self.y)), self.y
 
     def show_in_new_window(self, main_window: MainWindow, super_parent: QWidget):
         main_window_geometry = main_window.geometry()
