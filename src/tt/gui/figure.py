@@ -12,7 +12,7 @@ from matplotlib.lines import Line2D
 
 from tt.data.punits import dt
 from tt.data.trace import Overlay
-from tt.gui.trace_config_dialog import TraceConfigDialog
+from tt.gui.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
 
 
 class PlotFigure(QWidget):
@@ -83,6 +83,10 @@ class PlotFigure(QWidget):
     def show_config(self):
         TraceConfigDialog(self).show()
 
+    def set_stat_functions(self, functions: list[str]) -> None:
+        self.original_trace.set_stat_functions(functions)
+        self.replot_main_trace()
+
     def set_show_grid(self, show_grid: bool) -> None:
         self.original_trace.set_show_grid(show_grid)
         self.ax.grid(show_grid)
@@ -95,6 +99,7 @@ class PlotFigure(QWidget):
 
     def set_x_label(self, label: str) -> None:
         if label != "":
+            assert self.app.project is not None
             self.ax.set_xlabel(f"{label} [{self.app.project.dt_unit}]")
         else:
             self.ax.set_xlabel(label)
@@ -171,6 +176,20 @@ class PlotFigure(QWidget):
             if y_filtered is not None:
                 self.ax.plot(x, y_filtered, "-", color = "black")
 
+            if self.original_trace.stat_functions != []:
+                altered_label: str = self.plt1[0].get_label()
+                for fname in self.original_trace.stat_functions:
+                    stat_value = self.app.project.apply_stat_function(
+                        function_name = fname,
+                        trace_name = self.original_trace.name,
+                        trace_version = self.trace_1.version,
+                        scaling_factor = self.original_trace.y_scale,
+                        offset = self.original_trace.y_offset,
+                    )
+                    v = float(f"{stat_value:.2g}")
+                    altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"
+                self.plt1[0].set_label(altered_label)
+
         if self.trace_2 is not None:
             x, y = self.trace_2.xy
             if self.trace_1 is None:
@@ -186,11 +205,28 @@ class PlotFigure(QWidget):
             if y_filtered is not None:
                 self.ax.plot(x, y_filtered, "-", color = "red")
 
+            if self.original_trace.stat_functions != []:
+                altered_label: str = self.plt2[0].get_label()
+                for fname in self.original_trace.stat_functions:
+                    stat_value = self.app.project.apply_stat_function(
+                        function_name = fname,
+                        trace_name = self.original_trace.name,
+                        trace_version = self.trace_2.version,
+                        scaling_factor = self.original_trace.y_scale,
+                        offset = self.original_trace.y_offset,
+                    )
+                    v = float(f"{stat_value:.2g}")
+                    altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"
+                self.plt2[0].set_label(altered_label)
+
         if self.trace_1 is not None or self.trace_2 is not None:
-            self.legend: Legend = self.ax.legend()
+            self.legend: Legend = self.ax.legend(edgecolor = "black", facecolor = "whitesmoke")
+            self.legend.get_frame().set_alpha(0.85)
+            # self.legend.get_frame().set_color("lightgray")
             self.legend.set_loc(self.original_trace.legend_location.lower())
             self.legend.set_visible(self.original_trace.show_legend)
             self.canvas.figure.tight_layout()
+
         self.ax.relim()
         self.ax.autoscale_view()
         self.canvas.draw()
