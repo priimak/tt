@@ -1,3 +1,4 @@
+from functools import cache
 from typing import override, Any
 
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex, QPersistentModelIndex
@@ -76,21 +77,31 @@ class TracesFrameModel(QAbstractTableModel):
     def headerData(self, section: int, orientation: Qt.Orientation, role = ...) -> Any:
         return "Trace Label"
 
+    @cache
+    def __prc(self, pname: str) -> int:
+        assert self.app.project is not None
+        return len([t for t in self.app.project.traces(-1) if t.state == self.trace_state])
+
     @override
     def rowCount(self, parent = ...) -> int:
         if self.app.project is None:
             return 0
         else:
-            return len([t for t in self.app.project.traces(-1) if t.state == self.trace_state])
+            return self.__prc(self.app.project.name)
 
     @override
     def columnCount(self, parent = ...) -> int:
         return 1
 
+    @cache
+    def __data(self, project_name: str, trace_version: int) -> Any:
+        assert self.app.project is not None
+        return [t.label for t in self.app.project.traces(-1) if t.state == self.trace_state]
+
     @override
     def data(self, index: QModelIndex | QPersistentModelIndex, role: int = 1) -> Any:
         if role == Qt.ItemDataRole.DisplayRole and self.app.project is not None:
-            return [t.label for t in self.app.project.traces(-1) if t.state == self.trace_state][index.row()]
+            return self.__data(self.app.project.name, self.app.project.latest_traces_version)[index.row()]
         else:
             return None
 

@@ -96,7 +96,6 @@ class TracesConfig(JsonSerializable):
         version = (self.latest_traces_version + 1 + version) if version < 0 else version
         if version > self.latest_traces_version or version == 0:
             return []
-
         tr_config = json.loads(self.config_file.read_text())
         traces = []
         for tr in enumerate(tr_config["traces"]):
@@ -139,6 +138,11 @@ class Trace(JsonSerializable):
         self.version = version
         self.__config = config
         self.__versioned_config_file = self.__config.config_file.parent / f"{self.version:05}" / "config.json"
+        trigger_json_file = self.__config.config_file.parent / f"{self.version:05}" / "trigger.json"
+        if trigger_json_file.exists():
+            self.t0_index: int = json.loads(trigger_json_file.read_text())["t0_index"]
+        else:
+            self.t0_index: int = 0
 
     def set_stat_functions(self, stat_functions: list[str]) -> None:
         self.stat_functions = stat_functions.copy()
@@ -250,7 +254,7 @@ class Trace(JsonSerializable):
 
     @cache
     def __t(self, dt: float, len: int) -> list[float]:
-        return [dt * i for i in range(len)]
+        return [dt * (i - self.t0_index) for i in range(len)]
 
     @property
     def xy(self) -> tuple[list[float], list[float]]:
