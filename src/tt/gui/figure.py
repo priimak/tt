@@ -4,8 +4,9 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QComboBox, QLabel
-from matplotlib.backends.backend_qtagg import FigureCanvas
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvas  # pyright: ignore [reportAttributeAccessIssue]
+from matplotlib.backends.backend_qtagg import \
+    NavigationToolbar2QT as NavigationToolbar  # pyright: ignore [reportPrivateImportUsage]
 from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D

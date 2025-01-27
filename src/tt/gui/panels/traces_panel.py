@@ -11,6 +11,8 @@ from pytide6.widget_wrapper import W
 from tt.data.trace import TraceState, Trace, Traces
 from tt.gui.app import App
 
+INTERNAL_CHANGE_ID: int = 1
+
 
 class SelectTracesVersionsDialg(Dialog):
     def __init__(self, parent, app: App, trace_name: str):
@@ -57,6 +59,7 @@ class TraceLabelChangeDialog(Dialog):
                 app.show_error("Trace with this label already exists. Please pick a different label.")
             else:
                 trace.label = new_trace_label
+                app.notify_tables_require_change()
                 self.close()
 
         ok_button = PushButton("Ok", on_clicked = on_ok)
@@ -78,7 +81,7 @@ class TracesFrameModel(QAbstractTableModel):
         return "Trace Label"
 
     @cache
-    def __prc(self, pname: str) -> int:
+    def __prc(self, pname: str, change_id: int) -> int:
         assert self.app.project is not None
         return len([t for t in self.app.project.traces(-1) if t.state == self.trace_state])
 
@@ -87,21 +90,23 @@ class TracesFrameModel(QAbstractTableModel):
         if self.app.project is None:
             return 0
         else:
-            return self.__prc(self.app.project.name)
+            return self.__prc(self.app.project.name, self.app.taces_views_change_id)
 
     @override
     def columnCount(self, parent = ...) -> int:
         return 1
 
     @cache
-    def __data(self, project_name: str, trace_version: int) -> Any:
+    def __data(self, project_name: str, trace_version: int, change_id: int) -> Any:
         assert self.app.project is not None
         return [t.label for t in self.app.project.traces(-1) if t.state == self.trace_state]
 
     @override
     def data(self, index: QModelIndex | QPersistentModelIndex, role: int = 1) -> Any:
         if role == Qt.ItemDataRole.DisplayRole and self.app.project is not None:
-            return self.__data(self.app.project.name, self.app.project.latest_traces_version)[index.row()]
+            return self.__data(
+                self.app.project.name, self.app.project.latest_traces_version, self.app.taces_views_change_id
+            )[index.row()]
         else:
             return None
 
@@ -188,6 +193,7 @@ class TracesPanel(VBoxPanel):
         parent_change = app.notify_tables_require_change
 
         def notifier():
+            self.app.taces_views_change_id += 1
             parent_change()
             self.traces_view.table_model.layoutChanged.emit()
             self.traces_view.resizeColumnsToContents()
