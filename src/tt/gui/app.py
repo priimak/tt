@@ -33,6 +33,10 @@ class App:
         self.main_window: Callable[[], MainWindow] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
         self.super_parent: Callable[[], QWidget] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
 
+        self.register_window: Callable[[QWidget], None] = lambda _: None
+        self.unregister_window: Callable[[QWidget], None] = lambda _: None
+        self.close_all_plots: Callable[[], None] = lambda: None
+
     def set_new_open_project(self, project: Project) -> None:
         self.project = project
         self.set_opened_project_label(

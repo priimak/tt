@@ -17,6 +17,8 @@ from tt.gui.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
 
 
 class PlotFigure(QWidget):
+    NEXT_PLOT_ID: int = 0
+
     def __init__(self, main_window, raw_trace, app):
         from tt.gui.app import App
         self.app: App = app
@@ -27,6 +29,8 @@ class PlotFigure(QWidget):
         self.trace_1: Trace | None = None
         self.trace_2: Trace = raw_trace
         self.trace_name = raw_trace.name
+        PlotFigure.NEXT_PLOT_ID += 1
+        self.setProperty("win_id", f"{PlotFigure.NEXT_PLOT_ID}")
 
         self.setWindowTitle(f"Trace: {self.trace_2.label}")
 
@@ -253,3 +257,7 @@ class PlotFigure(QWidget):
             assert self.app.project is not None
             self.trace_1 = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
         self.replot_main_trace()
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.app.unregister_window(self)
