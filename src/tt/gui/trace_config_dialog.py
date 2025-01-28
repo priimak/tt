@@ -147,7 +147,6 @@ class TraceConfigDialog(Dialog):
                 self.lowpass_freq_cutoff,
                 self.bandstop_freq_1,
                 self.bandstop_freq_2,
-                # CheckBox("", checked = figure.original_trace.show_grid, on_change = figure.set_show_grid),
                 W(HBoxPanel(), stretch = 1)
             ]),
             self.functions_panel,
@@ -162,7 +161,7 @@ class TraceConfigDialog(Dialog):
         try:
             assert isinstance(self.figure.original_trace.overlay, OverlayLowpass)
             self.figure.original_trace.overlay.set_cutoff_frequency(freq_value)
-            self.figure.replot_main_trace()
+            self.figure.replot_traces()
             self.figure.original_trace.persist()
         except:
             pass
@@ -180,7 +179,7 @@ class TraceConfigDialog(Dialog):
                 new_window_value = int(window_value.strip())
                 self.figure.original_trace.overlay.set_window_length(
                     f"{new_window_value}")  # pyright: ignore [reportAttributeAccessIssue]
-            self.figure.replot_main_trace()
+            self.figure.replot_traces()
             self.figure.original_trace.persist()
         except:
             pass
