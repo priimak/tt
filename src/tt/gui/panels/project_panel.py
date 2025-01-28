@@ -4,7 +4,43 @@ from pytide6 import VBoxPanel, HBoxPanel, Label, Dialog, LineTextInput, VBoxLayo
 from pytide6.buttons import PushButton
 from pytide6.widget_wrapper import W
 
+from tt.data.punits import Duration, Frequency, FrequencyUnit
 from tt.gui.app import App
+
+
+class DTFromSamplingRate(Dialog):
+    def __init__(self, parent: "ChangeDTDialog", app: App, dt: Duration):
+        super().__init__(parent, windowTitle = "Sampling rate", modal = True)
+
+        frequency: Frequency = 1 / dt
+        freq_input = QLineEdit(f"{frequency.as_float()}")
+        freq_unit = QComboBox()
+        freq_unit.addItems([u.value for u in FrequencyUnit])
+        freq_unit.setCurrentText(frequency.unit.value)
+
+        def update_dt():
+            try:
+                new_freq_value = float(freq_input.text())
+                if new_freq_value <= 0:
+                    app.show_error("Frequency value cannot be 0 or negative")
+                else:
+                    dt = 1 / Frequency.value_of(f"{new_freq_value} {freq_unit.currentText()}")
+                    parent.implied_dt_input.setText(f"{dt.as_float()}")
+                    parent.dt_unit.setCurrentText(dt.unit.value)
+                    self.close()
+            except ValueError:
+                app.show_error("Frequency value is not a valid float")
+
+            self.close()
+
+        self.setLayout(VBoxLayout([
+            HBoxPanel([QLabel("Implied dT"), freq_input, freq_unit]),
+            HBoxPanel([
+                W(HBoxPanel(), stretch = 1),
+                PushButton("Ok", on_clicked = update_dt, auto_default = True),
+                PushButton("Cancel", on_clicked = lambda: self.close())
+            ])
+        ]))
 
 
 class ChangeDTDialog(Dialog):
@@ -13,30 +49,41 @@ class ChangeDTDialog(Dialog):
 
         assert app.project is not None
 
-        implied_dt_input = QLineEdit(f"{app.project.implied_dt}")
-        dt_unit = QComboBox()
-        dt_unit.addItems(["ns", "us", "ms", "s", "m"])
-        dt_unit.setCurrentText(app.project.dt_unit)
+        self.implied_dt_input = QLineEdit(f"{app.project.implied_dt}")
+        self.implied_dt_input.setMinimumWidth(200)
+        self.dt_unit = QComboBox()
+        self.dt_unit.addItems(["ns", "us", "ms", "s"])
+        self.dt_unit.setCurrentText(app.project.dt_unit)
 
         def update_dt():
             try:
-                new_implied_dt_value = float(implied_dt_input.text())
+                new_implied_dt_value = float(self.implied_dt_input.text())
                 if new_implied_dt_value <= 0:
                     app.show_error("dT value cannot be 0 or negative")
                 else:
                     assert app.project is not None
                     app.project.implied_dt = new_implied_dt_value
-                    app.project.dt_unit = dt_unit.currentText()
+                    app.project.dt_unit = self.dt_unit.currentText()
                     app.notify_project_panel_on_project_load()
                     self.close()
             except ValueError:
                 app.show_error("New implied dT value is not a valid float")
 
+        def get_dt() -> Duration:
+            try:
+                return Duration.value_of(f"{self.implied_dt_input.text()} {self.dt_unit.currentText()}")
+            except ValueError:
+                return Duration.value_of("1 us")
+
+        def derive_from_frequency():
+            DTFromSamplingRate(self, app, get_dt()).show()
+
         self.setLayout(VBoxLayout([
             HBoxPanel([
                 QLabel("Implied dT"),
-                implied_dt_input,
-                dt_unit
+                self.implied_dt_input,
+                self.dt_unit,
+                PushButton("Derive From Sampling Frequency", on_clicked = derive_from_frequency, auto_default = False)
             ]),
             HBoxPanel([
                 W(HBoxPanel(), stretch = 1),
@@ -96,7 +143,7 @@ class ProjectPanel(VBoxPanel):
         project_directory_line_edit.setEnabled(False)
 
         dt_line_edit = QLineEdit("N/A")
-        dt_line_edit.setMinimumWidth(80)
+        dt_line_edit.setMinimumWidth(200)
         dt_line_edit.setEnabled(False)
         change_dt_b = PushButton(
             "Change Value",

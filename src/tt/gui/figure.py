@@ -17,6 +17,8 @@ from tt.gui.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
 
 
 class PlotFigure(QWidget):
+    NEXT_PLOT_ID: int = 0
+
     def __init__(self, main_window, raw_trace, app):
         from tt.gui.app import App
         self.app: App = app
@@ -27,6 +29,8 @@ class PlotFigure(QWidget):
         self.trace_1: Trace | None = None
         self.trace_2: Trace = raw_trace
         self.trace_name = raw_trace.name
+        PlotFigure.NEXT_PLOT_ID += 1
+        self.setProperty("win_id", f"{PlotFigure.NEXT_PLOT_ID}")
 
         self.setWindowTitle(f"Trace: {self.trace_2.label}")
 
@@ -75,18 +79,18 @@ class PlotFigure(QWidget):
         self.legend.set_loc(self.trace_2.legend_location.lower())
         self.legend.set_visible(self.trace_2.show_legend)
         self.canvas.figure.tight_layout()
-        self.replot_main_trace()
+        self.replot_traces()
 
     def set_overlay(self, overlay: Overlay):  # pyright: ignore [reportUndefinedVariable]
         self.original_trace.set_overlay(overlay)
-        self.replot_main_trace()
+        self.replot_traces()
 
     def show_config(self):
         TraceConfigDialog(self).show()
 
     def set_stat_functions(self, functions: list[str]) -> None:
         self.original_trace.set_stat_functions(functions)
-        self.replot_main_trace()
+        self.replot_traces()
 
     def set_show_grid(self, show_grid: bool) -> None:
         self.original_trace.set_show_grid(show_grid)
@@ -129,27 +133,38 @@ class PlotFigure(QWidget):
     def set_y_scale(self, y_scale: str) -> None:
         try:
             self.original_trace.set_y_scale(y_scale)
+            self.original_trace.y.cache_clear()
+
             if self.trace_2 is not None:
                 self.trace_2.set_y_scale(y_scale)
+                self.trace_2.y.cache_clear()
+
             if self.trace_1 is not None:
                 self.trace_1.set_y_scale(y_scale)
+                self.trace_1.y.cache_clear()
 
-            self.replot_main_trace()
+            self.replot_traces()
         except:
             pass
 
     def set_y_offset(self, y_offset: str) -> None:
         try:
             self.original_trace.set_y_offset(y_offset)
+            self.original_trace.y.cache_clear()
+
             if self.trace_2 is not None:
                 self.trace_2.set_y_offset(y_offset)
+                self.trace_2.y.cache_clear()
+
             if self.trace_1 is not None:
                 self.trace_1.set_y_offset(y_offset)
-            self.replot_main_trace()
+                self.trace_1.y.cache_clear()
+
+            self.replot_traces()
         except:
             pass
 
-    def replot_main_trace(self) -> None:
+    def replot_traces(self) -> None:
         self.ax.clear()
         self.ax.set_title(self.original_trace.title)
         self.ax.grid(self.original_trace.show_grid)
@@ -241,7 +256,7 @@ class PlotFigure(QWidget):
         else:
             assert self.app.project is not None
             self.trace_2 = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
-        self.replot_main_trace()
+        self.replot_traces()
 
     def set_v1_version(self, new_version: str) -> None:
         if self.plt1 is not None:
@@ -252,4 +267,8 @@ class PlotFigure(QWidget):
         else:
             assert self.app.project is not None
             self.trace_1 = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
-        self.replot_main_trace()
+        self.replot_traces()
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.app.unregister_window(self)

@@ -127,3 +127,7 @@ class TTMainWindow(MainWindow):
                 self.signal_prompt_user_to_reload_traces.emit()
         except:
             pass
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.app.close_all_plots()

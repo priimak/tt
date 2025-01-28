@@ -150,6 +150,10 @@ class Frequency:
     def in_unit(self, unit: str | FrequencyUnit) -> "Frequency":
         return Frequency(self.as_float(unit), FrequencyUnit.value_of(unit))
 
+    @property
+    def unit(self) -> FrequencyUnit:
+        return self.__unit
+
 
 class TimeUnit(Enum):
     s = "s"
@@ -298,6 +302,10 @@ class Duration:
             return self.__value == other.__value
         else:
             return self.__value == other.as_float(self.__unit)
+
+    @property
+    def unit(self) -> TimeUnit:
+        return self.__unit
 
 
 def F(src: str | Frequency) -> Frequency:

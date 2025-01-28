@@ -44,16 +44,16 @@ class Project(JsonSerializable):
                             offset: float) -> float:
         match function_name:
             case "min":
-                return min(self.traces(version = trace_version, trace_name = trace_name)[0].y)
+                return min(self.traces(version = trace_version, trace_name = trace_name)[0].y())
             case "max":
-                return max(self.traces(version = trace_version, trace_name = trace_name)[0].y)
+                return max(self.traces(version = trace_version, trace_name = trace_name)[0].y())
             case "range":
-                ys = self.traces(version = trace_version, trace_name = trace_name)[0].y
+                ys = self.traces(version = trace_version, trace_name = trace_name)[0].y()
                 return max(ys) - min(ys)
             case "mean":
-                return float(numpy.mean(self.traces(version = trace_version, trace_name = trace_name)[0].y))
+                return float(numpy.mean(self.traces(version = trace_version, trace_name = trace_name)[0].y()))
             case "stdev":
-                return float(numpy.std(self.traces(version = trace_version, trace_name = trace_name)[0].y))
+                return float(numpy.std(self.traces(version = trace_version, trace_name = trace_name)[0].y()))
             case _:
                 raise RuntimeError(f"Unsupported function name: {function_name}")
 

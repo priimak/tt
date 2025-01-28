@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from enum import StrEnum
-from functools import cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -245,32 +245,32 @@ class Trace(JsonSerializable):
         data[self.__name]["note"] = note
         self.__versioned_config_file.write_text(json.dumps(data, indent = 2))
 
-    @property
-    # @cache
+    @cache
     def y(self) -> list[float]:
         df: DataFrame = self.__config.df(self.version)
         y_values = df.get_column(self.name).to_list()
         return [(self.y_scale * v + self.y_offset) for v in y_values]
 
-    @cache
+    @lru_cache(maxsize = 10)
     def __t(self, dt: float, len: int) -> list[float]:
         return [dt * (i - self.t0_index) for i in range(len)]
 
     @property
     def xy(self) -> tuple[list[float], list[float]]:
         dt = self.__config.dt()
-        return self.__t(dt, len(self.y)), self.y
+        return self.__t(dt, len(self.y())), self.y()
 
     def show_in_new_window(self, main_window: MainWindow, super_parent: QWidget):
         main_window_geometry = main_window.geometry()
-        # f = PlotView(super_parent, main_window.app)
-        f = PlotFigure(super_parent, self, main_window.app)  # pyright: ignore [reportAttributeAccessIssue]
-        f.show()
-        figure_geometry: QRect = f.geometry()
-        f.move(
+        # figure = PlotView(super_parent, main_window.app)
+        figure = PlotFigure(None, self, main_window.app)  # pyright: ignore [reportAttributeAccessIssue]
+        figure.show()
+        figure_geometry: QRect = figure.geometry()
+        figure.move(
             main_window_geometry.center().x() - int(figure_geometry.width() / 2),
             main_window_geometry.center().y() - int(figure_geometry.height() / 2)
         )
+        main_window.app.register_window(figure)  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @dataclass
