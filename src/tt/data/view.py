@@ -26,12 +26,20 @@ class AxisLean(Enum):
 
 
 class TraceSpec:
-    def __init__(self, name: str, trace_version: int, on_axis: AxisLean, color: str):
+    def __init__(self,
+                 name: str,
+                 trace_version: int,
+                 on_axis: AxisLean,
+                 color: str,
+                 show_filtered_trace: bool,
+                 show_legends: bool):
         self.__name: str = name
         self.__trace_version: int = trace_version
         self.__on_axis: AxisLean = on_axis
         self.__color: str = color  # "auto" is the default
         self._subplot: SubPlot | None = None
+        self.__show_filtered_trace: bool = show_filtered_trace
+        self.__show_legends: bool = show_legends
 
     def __repr__(self):
         return json.dumps(self.to_dic(), indent = 2)
@@ -42,11 +50,31 @@ class TraceSpec:
             "trace_version": self.__trace_version,
             "on_axis": self.__on_axis.value,
             "color": self.__color,
+            "show_filtered_trace": self.__show_filtered_trace,
+            "show_legends": self.__show_legends,
         }
 
     def __persist(self) -> None:
         if self._subplot is not None:
             self._subplot.persist()
+
+    @property
+    def show_legends(self) -> bool:
+        return self.__show_legends
+
+    @show_legends.setter
+    def show_legends(self, value: bool) -> None:
+        self.__show_legends = value
+        self.__persist()
+
+    @property
+    def show_filtered_trace(self) -> bool:
+        return self.__show_filtered_trace
+
+    @show_filtered_trace.setter
+    def show_filtered_trace(self, value: bool) -> None:
+        self.__show_filtered_trace = value
+        self.__persist()
 
     @property
     def name(self) -> str:
@@ -55,6 +83,11 @@ class TraceSpec:
     @property
     def trace_version(self) -> int:
         return self.__trace_version
+
+    @trace_version.setter
+    def trace_version(self, trace_version: int) -> None:
+        self.__trace_version = trace_version
+        self.__persist()
 
     @property
     def on_axis(self) -> AxisLean:
@@ -81,11 +114,16 @@ class TraceSpec:
             trace_version = data["trace_version"],
             on_axis = AxisLean.value_of(data["on_axis"]),
             color = data["color"],
+            show_filtered_trace = data.get("show_filtered_trace", False),
+            show_legends = data.get("show_legends", False),
         )
 
 
 class SubPlot:
-    def __init__(self, row: int, column: int):
+    def __init__(
+            self, row: int, column: int, left_axis_label: str, right_axis_label: str, show_grid: bool,
+            legend_location: str, x_axis_label: str
+    ):
         if row < 0:
             raise ValueError("row cannot be negative")
         if column < 0:
@@ -94,10 +132,72 @@ class SubPlot:
         self.__column: int = column
         self.__traces: list[TraceSpec] = []
         self._view_spec: ViewSpec | None = None
+        self.__left_axis_label: str = left_axis_label
+        self.__right_axis_label: str = right_axis_label
+        self.__x_axis_label: str = x_axis_label
+        self.__show_grid: bool = show_grid
+        self.__legend_location = legend_location
 
     def persist(self) -> None:
         if self._view_spec is not None:
             self._view_spec.persist()
+
+    @property
+    def legend_location(self) -> str:
+        return self.__legend_location
+
+    @legend_location.setter
+    def legend_location(self, location: str) -> None:
+        self.__legend_location = location
+        self.__persist()
+
+    def set_legend_location(self, location: str) -> None:
+        self.legend_location = location
+
+    @property
+    def left_axis_label(self) -> str:
+        return self.__left_axis_label
+
+    @left_axis_label.setter
+    def left_axis_label(self, label: str) -> None:
+        self.__left_axis_label = label
+        self.__persist()
+
+    def set_left_axis_label(self, label: str) -> None:
+        self.left_axis_label = label
+
+    @property
+    def right_axis_label(self) -> str:
+        return self.__right_axis_label
+
+    @right_axis_label.setter
+    def right_axis_label(self, label: str) -> None:
+        self.__right_axis_label = label
+        self.__persist()
+
+    def set_right_axis_label(self, label: str) -> None:
+        self.right_axis_label = label
+
+    @property
+    def x_axis_label(self) -> str:
+        return self.__x_axis_label
+
+    @x_axis_label.setter
+    def x_axis_label(self, label: str) -> None:
+        self.__x_axis_label = label
+        self.__persist()
+
+    @property
+    def show_grid(self) -> bool:
+        return self.__show_grid
+
+    @show_grid.setter
+    def show_grid(self, value: bool) -> None:
+        self.__show_grid = value
+        self.__persist()
+
+    def set_show_grid(self, value: bool) -> None:
+        self.__show_grid = value
 
     @property
     def row(self) -> int:
@@ -114,6 +214,11 @@ class SubPlot:
         return {
             "row": self.__row,
             "column": self.__column,
+            "left_axis_label": self.__left_axis_label,
+            "right_axis_label": self.__right_axis_label,
+            "x_axis_label": self.__x_axis_label,
+            "show_grid": self.__show_grid,
+            "legend_location": self.__legend_location,
             "traces": [tr.to_dic() for tr in self.__traces]
         }
 
@@ -143,7 +248,11 @@ class SubPlot:
         sbpl = SubPlot(
             row = data["row"],
             column = data["column"],
-            # traces = [TraceSpec.from_dict(tr) for tr in data["traces"]],
+            left_axis_label = data.get("left_axis_label", ""),
+            right_axis_label = data.get("right_axis_label", ""),
+            show_grid = data.get("show_grid", False),
+            legend_location = data.get("legend_location", "None"),
+            x_axis_label = data.get("x_axis_label", ""),
         )
 
         for tr in data["traces"]:
@@ -154,22 +263,28 @@ class SubPlot:
 
 
 class ViewSpec:
-    def __init__(self, name: str, num_rows: int, num_columns: int):
+    def __init__(self, name: str, num_rows: int, num_columns: int, title: str):
         self.__spec_version: int = 1
         if name.strip() == "":
             raise ValueError("Name cannot be empty")
+        if title.strip() == "":
+            raise ValueError("Title cannot be empty")
         if num_rows <= 0:
             raise ValueError("Number of rows must be positive")
         if num_columns <= 0:
             raise ValueError("Number of columns must be positive")
         self.__name: str = name.strip()
+        self.__title: str = title.strip()
         self.__num_rows: int = num_rows
         self.__num_columns: int = num_columns
 
         self.__sub_plots: list[SubPlot] = []
         for r in range(self.__num_rows):
             for c in range(self.__num_columns):
-                sbpl = SubPlot(row = r, column = c)
+                sbpl = SubPlot(
+                    row = r, column = c, left_axis_label = "", right_axis_label = "",
+                    show_grid = False, legend_location = "None", x_axis_label = ""
+                )
                 sbpl._view_spec = self
                 self.__sub_plots.append(sbpl)
         self._views: Views | None = None
@@ -202,43 +317,57 @@ class ViewSpec:
             if self._views is not None:
                 self._views.persist()
 
-    def __recreate_subplots(self) -> None:
-        new_sub_plots = []
-        for r in range(self.__num_rows):
-            for c in range(self.__num_columns):
-                sbpl = [s for s in self.__sub_plots if s.row == r and s.column == c]
-                if sbpl != []:
-                    new_sub_plots.extend(sbpl)
-                else:
-                    sbpl = SubPlot(row = r, column = c)
-                    sbpl._view_spec = self
-                    new_sub_plots.append(sbpl)
-        self.__sub_plots.clear()
-        self.__sub_plots.extend(new_sub_plots)
-        if self._views is not None:
-            self._views.persist()
+    @property
+    def title(self) -> str:
+        return self.__title
+
+    @title.setter
+    def title(self, title: str) -> None:
+        if self.__name == title:
+            return
+        else:
+            self.__title = title
+            if self._views is not None:
+                self._views.persist()
+
+    # def __recreate_subplots(self) -> None:
+    #     new_sub_plots = []
+    #     for r in range(self.__num_rows):
+    #         for c in range(self.__num_columns):
+    #             sbpl = [s for s in self.__sub_plots if s.row == r and s.column == c]
+    #             if sbpl != []:
+    #                 new_sub_plots.extend(sbpl)
+    #             else:
+    #                 sbpl = SubPlot(row = r, column = c)
+    #                 sbpl._view_spec = self
+    #                 new_sub_plots.append(sbpl)
+    #     self.__sub_plots.clear()
+    #     self.__sub_plots.extend(new_sub_plots)
+    #     if self._views is not None:
+    #         self._views.persist()
 
     @property
     def num_rows(self) -> int:
         return self.__num_rows
 
-    @num_rows.setter
-    def num_rows(self, num_rows: int) -> None:
-        self.__num_rows = num_rows
-        self.__recreate_subplots()
+    # @num_rows.setter
+    # def num_rows(self, num_rows: int) -> None:
+    #     self.__num_rows = num_rows
+    #     self.__recreate_subplots()
 
     @property
     def num_columns(self) -> int:
         return self.__num_columns
 
-    @num_columns.setter
-    def num_columns(self, num_columns: int) -> None:
-        self.__num_columns = num_columns
-        self.__recreate_subplots()
+    # @num_columns.setter
+    # def num_columns(self, num_columns: int) -> None:
+    #     self.__num_columns = num_columns
+    #     self.__recreate_subplots()
 
     def to_dic(self) -> dict[str, Any]:
         return {
             "spec_version": self.__spec_version,
+            "title": self.__title,
             "view_name": self.__name,
             "num_rows": self.__num_rows,
             "num_columns": self.__num_columns,
@@ -258,6 +387,7 @@ class ViewSpec:
                 name = data["view_name"],
                 num_rows = data["num_rows"],
                 num_columns = data["num_columns"],
+                title = data["title"],
             )
             vs.__sub_plots.clear()
             for sp_data in data["sub_plots"]:
@@ -322,3 +452,9 @@ class Views(Persisting):
             if v.name == name:
                 return v
         return None
+
+    def delete_view(self, view_name: str) -> None:
+        index_to_delete = [iv[0] for iv in enumerate(self.__views) if iv[1].name == view_name]
+        if index_to_delete != []:
+            del self.__views[index_to_delete[0]]
+            self.persist()

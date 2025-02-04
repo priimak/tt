@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 from PySide6.QtWidgets import QWidget
 from pytide6 import MainWindow
@@ -25,10 +25,12 @@ class App:
 
         self.reload_traces_menu_enable: Callable[[], None] = lambda: None
         self.reload_traces_menu_disable: Callable[[], None] = lambda: None
-        self.delete_opened_project_menu_enable: Callable[[], None] = lambda: None
-        self.delete_opened_project_menu_disable: Callable[[], None] = lambda: None
+        self.project_opened_menus_enabled: Callable[[], Any] = lambda: None
+        self.project_opened_menus_disable: Callable[[], Any] = lambda: None
         self.notify_tables_require_change: Callable[[], None] = lambda: None
+        self.notify_views_require_change: Callable[[], None] = lambda: None
         self.notify_project_panel_on_project_load: Callable[[], None] = lambda: None
+        self.edit_view: Callable[[str], None] = lambda _: None
 
         self.main_window: Callable[[], MainWindow] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
         self.super_parent: Callable[[], QWidget] = lambda: None  # pyright: ignore [reportAttributeAccessIssue]
@@ -48,6 +50,8 @@ class App:
         self.reload_traces_menu_enable()
         self.set_reference_change_id(project.trace_source.change_id())
         self.app_persistence.config.set_value("last_opened_project", project.name)
+        self.project_opened_menus_enabled()
+        self.notify_views_require_change()
 
     def set_reference_change_id(self, change_id: float) -> None:
         self.__ref_change_id = change_id

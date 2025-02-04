@@ -11,6 +11,7 @@ import numpy
 from tt.data.jsonable import JsonSerializable
 from tt.data.trace import Trace, TracesConfig, TraceState
 from tt.data.trace_source import TraceSource, NullTraceSource, CSVFileTraceSource
+from tt.data.view import Views
 
 
 class Project(JsonSerializable):
@@ -28,6 +29,7 @@ class Project(JsonSerializable):
                  dt_unit: str):
         self.project_dir = projects_dir / name
         self.project_json_file = self.project_dir / "project.json"
+        self.views = Views.from_json_file(self.project_dir / "data" / "views.json")
         self.__name = name
         self.trace_source = NullTraceSource(self)
         self.__implied_dt = implied_dt

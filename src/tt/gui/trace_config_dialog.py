@@ -1,4 +1,3 @@
-import time
 from typing import List, Callable, Self
 
 from PySide6.QtCore import QMargins
@@ -9,12 +8,8 @@ from pytide6.buttons import PushButton
 from pytide6.inputs import FloatTextInput
 from pytide6.widget_wrapper import W
 
+from tt.data.legends import LEGEND_LOCATIONS
 from tt.data.overlays import OverlaySavitzkyGolay, OverlayLowpass, OverlayNone
-
-LEGEND_LOCATIONS = [
-    "Best", "Upper Right", "Upper Left", "Lower Left", "Lower Right", "Right", "Center Left",
-    "Center Right", "Lower Center", "Upper Center", "Center"
-]
 
 STAT_FUNC_NAME_2_LABEL = {
     "min": r"Y_{-}",
@@ -56,7 +51,6 @@ class TraceConfigDialog(Dialog):
         super().__init__(parent = plot_figure, windowTitle = f"Config for [{plot_figure.original_trace.label}]",
                          modal = True)
         self.suppress_change_processing = True
-        t0 = time.time()
         from tt.gui.figure import PlotFigure
         self.figure: PlotFigure = plot_figure
 
