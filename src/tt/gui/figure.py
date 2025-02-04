@@ -1,5 +1,6 @@
 # from matplotlib.backends.backend_qt import FigureCanvasQT, NavigationToolbar2QT
 from pathlib import Path
+from typing import override
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QAction
@@ -86,7 +87,7 @@ class PlotFigure(QWidget):
         self.replot_traces()
 
     def show_config(self):
-        TraceConfigDialog(self).show()
+        TraceConfigDialog(self).exec()
 
     def set_stat_functions(self, functions: list[str]) -> None:
         self.original_trace.set_stat_functions(functions)
@@ -238,7 +239,6 @@ class PlotFigure(QWidget):
         if self.trace_1 is not None or self.trace_2 is not None:
             self.legend: Legend = self.ax.legend(edgecolor = "black", facecolor = "whitesmoke")
             self.legend.get_frame().set_alpha(0.85)
-            # self.legend.get_frame().set_color("lightgray")
             self.legend.set_loc(self.original_trace.legend_location.lower())
             self.legend.set_visible(self.original_trace.show_legend)
             self.canvas.figure.tight_layout()
@@ -272,3 +272,10 @@ class PlotFigure(QWidget):
     def closeEvent(self, event):
         super().closeEvent(event)
         self.app.unregister_window(self)
+
+    @override
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+
+        if event.key() == Qt.Key.Key_Escape:
+            self.close()

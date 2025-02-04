@@ -2,8 +2,8 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal, QTimer, QMutex
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QTabWidget, QLabel, QWidget
-from pytide6 import MainWindow, set_geometry, VBoxPanel, Panel, Dialog, VBoxLayout
+from PySide6.QtWidgets import QMessageBox, QTabWidget, QLabel, QWidget
+from pytide6 import MainWindow, set_geometry, VBoxPanel, Dialog, VBoxLayout
 from pytide6.buttons import PushButton
 from pytide6.panel_widget import W, HBoxPanel
 from sprats.config import AppPersistence
@@ -14,6 +14,7 @@ from tt.gui.menus.menu_bar import MainMenuBar
 from tt.gui.panels.info_panel import InfoPanel
 from tt.gui.panels.project_panel import ProjectPanel
 from tt.gui.panels.traces_panel import TracesPanel
+from tt.gui.panels.views_panel import ViewsPanel
 
 
 class TracesChangedDialog(Dialog):
@@ -74,7 +75,7 @@ class TTMainWindow(MainWindow):
         main_widget = QTabWidget()
         main_widget.addTab(TracesPanel(self.app, TraceState.ACTIVE), "Active Traces")
         main_widget.addTab(TracesPanel(self.app, TraceState.INACTIVE), "Inactive Traces")
-        main_widget.addTab(Panel(QVBoxLayout()), "Views")
+        main_widget.addTab(ViewsPanel(self.app), "Views")
         main_widget.addTab(ProjectPanel(self.app), "Project")
 
         self.setCentralWidget(
