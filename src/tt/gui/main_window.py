@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import Signal, QTimer, QMutex
+from PySide6.QtCore import Signal, QTimer, QMutex, QPoint
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMessageBox, QTabWidget, QLabel, QWidget
 from pytide6 import MainWindow, set_geometry, VBoxPanel, Dialog, VBoxLayout
@@ -10,6 +11,7 @@ from sprats.config import AppPersistence
 
 from tt.data.trace import TraceState
 from tt.gui.app import App
+from tt.gui.help.help_window import HelpWindow
 from tt.gui.menus.menu_bar import MainMenuBar
 from tt.gui.panels.info_panel import InfoPanel
 from tt.gui.panels.project_panel import ProjectPanel
@@ -45,13 +47,21 @@ class TracesChangedDialog(Dialog):
         ]))
 
 
+@dataclass
+class Icons:
+    help: QIcon
+
+
 class TTMainWindow(MainWindow):
     signal_show_error = Signal(str)
     signal_prompt_user_to_reload_traces = Signal()
+    signal_show_help = Signal(QWidget, str, QPoint)
 
     def __init__(self, screen_dim: tuple[int, int], app_persistence: AppPersistence):
         super().__init__(objectName = "MainWindow", windowTitle = "Trace Tool")
 
+        self.icons = Icons(help = QIcon(f"{(Path(__file__).parent / "icons" / "help.png").absolute()}"))
+        self.screen_dim = screen_dim
         self.super_parent = QWidget()
 
         tt_png = Path(__file__).parent / "tt.png"
@@ -69,6 +79,8 @@ class TTMainWindow(MainWindow):
 
         self.app.exit_application = self.close
         self.app.show_error = self.signal_show_error.emit
+
+        self.signal_show_help.connect(self.show_help)
 
         self.main_menu_bar = self.setMenuBar(MainMenuBar(self.app, dialogs_parent = self))
 
@@ -118,6 +130,26 @@ class TTMainWindow(MainWindow):
 
     def show_prompt_for_trace_reload(self) -> None:
         TracesChangedDialog(self, self.app).show()
+
+    def show_help(self, parent: QWidget, help_name: str, pos: QPoint) -> None:
+        window = HelpWindow(parent, help_name)
+        window.show()
+        window.raise_()
+        window.move(pos)
+        win_geo = window.geometry()
+        right_edge_x: int = win_geo.x() + win_geo.width()
+        bottom_edge_y: int = win_geo.y() + win_geo.height()
+
+        x_out = right_edge_x - self.screen_dim[0]
+        if x_out > 0:
+            pos.setX(pos.x() - x_out)
+
+        y_out = bottom_edge_y - self.screen_dim[1]
+        if y_out > 0:
+            pos.setY(pos.y() - y_out)
+
+        if x_out > 0 or y_out > 0:
+            window.move(pos)
 
     def scan_for_traces_change(self) -> None:
         try:
