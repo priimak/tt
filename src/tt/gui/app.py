@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Callable, Optional, Any
 
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtWidgets import QWidget, QToolButton
 from pytide6 import MainWindow
 from sprats.config import AppPersistence
 
@@ -58,3 +59,12 @@ class App:
 
     def get_reference_change_id(self) -> float | None:
         return self.__ref_change_id
+
+    def mk_help_tool_button(self) -> QToolButton:
+        help_button = QToolButton()
+        help_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        # noinspection PyUnresolvedReferences
+        help_button.setIcon(self.main_window().icons.help)
+        help_button.setIconSize(QSize(22, 22))
+        help_button.setStyleSheet("QToolButton { border: none; }")
+        return help_button

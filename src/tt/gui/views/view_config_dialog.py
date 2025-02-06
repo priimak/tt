@@ -1,4 +1,4 @@
-from PySide6.QtCore import QAbstractItemModel, Qt, Signal
+from PySide6.QtCore import QAbstractItemModel, Qt, Signal, QPoint
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QMouseEvent, QIntValidator
 from PySide6.QtWidgets import QTreeView, QAbstractItemView, QFrame, QHBoxLayout, QLabel, QGridLayout, QWidget, \
     QTableWidget, QTableWidgetItem, QHeaderView, QLayoutItem
@@ -30,14 +30,6 @@ def SI(text: str) -> QStandardItem:
     item = QStandardItem(text)
     item.setEditable(False)
     return item
-
-
-# class ID(QAbstractItemDelegate):
-#     def __init__(self, parent = None):
-#         super().__init__(parent)
-#
-#     def setModelData(self, editor, model, index):
-#         super().setModelData(editor, model, index)
 
 
 class ViewConfigDialogOld(Dialog):
@@ -170,8 +162,12 @@ class EditSubplotDialog(Dialog):
             subplot.legend_location = location
             self.view_conf_dialog.view_win.update_legends_on_subplot(subplot.row, subplot.column)
 
+        self.help_button = self.app.mk_help_tool_button()
+        self.help_button.clicked.connect(self.show_help)
+
         self.setLayout(VBoxLayout([
             VBoxPanel([
+                W(self.help_button, alignment = Qt.AlignmentFlag.AlignRight),
                 LineTextInput(
                     "Left Y-Axis Label",
                     subplot.left_axis_label,
@@ -214,8 +210,14 @@ class EditSubplotDialog(Dialog):
                 ),
                 stretch = 1
             )]),
+            W(HBoxPanel(), stretch = 1),
             HBoxPanel([W(HBoxPanel(), stretch = 1), PushButton("Ok", on_clicked = self.close, auto_default = True)]),
         ]))
+
+    def show_help(self):
+        pos = self.help_button.rect().center()
+        global_pos: QPoint = self.help_button.mapToGlobal(pos)
+        self.app.main_window().signal_show_help.emit(self, "view_subplot_edit", global_pos)
 
     @override
     def close(self) -> bool:

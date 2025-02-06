@@ -1,6 +1,6 @@
 from typing import List, Callable, Self
 
-from PySide6.QtCore import QMargins
+from PySide6.QtCore import QMargins, QPoint, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QComboBox, QLabel, QMenu, QHBoxLayout, QFrame, QWidget
 from pytide6 import Dialog, VBoxLayout, HBoxPanel, CheckBox, LineTextInput, VBoxPanel, Layout
@@ -48,7 +48,7 @@ class StatFuncLabel(QFrame):
 
 class TraceConfigDialog(Dialog):
     def __init__(self, plot_figure):
-        super().__init__(parent = plot_figure, windowTitle = f"Config for [{plot_figure.original_trace.label}]",
+        super().__init__(parent = plot_figure, windowTitle = f"Config for trace [{plot_figure.original_trace.label}]",
                          modal = True)
         self.suppress_change_processing = True
         from tt.gui.figure import PlotFigure
@@ -111,23 +111,27 @@ class TraceConfigDialog(Dialog):
         functions_panel_elements.append(W(HBoxPanel(), stretch = 1))
         self.functions_panel = HBoxPanel(functions_panel_elements)  # pyright: ignore [reportArgumentType]
 
+        self.help_button = self.figure.app.mk_help_tool_button()
+        self.help_button.clicked.connect(self.show_help)
+
         self.setLayout(VBoxLayout([
-            LineTextInput("Figure title", self.figure.original_trace.title, on_text_change = self.figure.set_title),
+            W(self.help_button, alignment = Qt.AlignmentFlag.AlignRight),
+            LineTextInput("Figure Title", self.figure.original_trace.title, on_text_change = self.figure.set_title),
             HBoxPanel([
                 CheckBox("", checked = self.figure.original_trace.show_legend, on_change = self.figure.set_show_legend),
-                QLabel("Show legend"),
+                QLabel("Show Legend"),
                 W(HBoxPanel(), stretch = 1)
             ]),
-            HBoxPanel([QLabel("Legend location"), legend_location, W(HBoxPanel(), stretch = 1)]),
-            LineTextInput("X-axis label", self.figure.original_trace.x_label, on_text_change = self.figure.set_x_label),
-            LineTextInput("Y-axis label", self.figure.original_trace.y_label, on_text_change = self.figure.set_y_label),
+            HBoxPanel([QLabel("Legend Location"), legend_location, W(HBoxPanel(), stretch = 1)]),
+            LineTextInput("X-Axis Label", self.figure.original_trace.x_label, on_text_change = self.figure.set_x_label),
+            LineTextInput("Y-Axis Label", self.figure.original_trace.y_label, on_text_change = self.figure.set_y_label),
             HBoxPanel([
                 CheckBox("", checked = self.figure.original_trace.show_grid, on_change = self.figure.set_show_grid),
-                QLabel("Show grid"),
+                QLabel("Show Grid"),
                 W(HBoxPanel(), stretch = 1)
             ]),
             HBoxPanel([
-                QLabel("Linear transform. Y' = "),
+                QLabel("Linear Transform. Y' = "),
                 FloatTextInput(label = None, text = f"{self.figure.original_trace.y_scale}",
                                on_text_change = self.figure.set_y_scale),
                 QLabel(" × Y + "),
@@ -135,7 +139,7 @@ class TraceConfigDialog(Dialog):
                                on_text_change = self.figure.set_y_offset)
             ]),
             HBoxPanel([
-                QLabel("Overlay filtered signal"),
+                QLabel("Overlay Filtered Signal"),
                 filter_name,
                 self.savgol_window_input,
                 self.lowpass_freq_cutoff,
@@ -148,6 +152,10 @@ class TraceConfigDialog(Dialog):
             HBoxPanel([W(HBoxPanel(), stretch = 1), PushButton("Ok", on_clicked = self.close)]),
         ]))
         self.suppress_change_processing = False
+
+    def show_help(self):
+        global_pos: QPoint = self.help_button.mapToGlobal(self.help_button.rect().center())
+        self.figure.app.main_window().signal_show_help.emit(self, "trace_config_dialog", global_pos)
 
     def process_lowpass_param_change(self, freq_value: str) -> None:
         if self.suppress_change_processing:

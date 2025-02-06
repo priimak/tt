@@ -29,7 +29,12 @@ class Project(JsonSerializable):
                  dt_unit: str):
         self.project_dir = projects_dir / name
         self.project_json_file = self.project_dir / "project.json"
-        self.views = Views.from_json_file(self.project_dir / "data" / "views.json")
+
+        data_dir = self.project_dir / "data"
+        if not data_dir.exists():
+            data_dir.mkdir(parents = True, exist_ok = True)
+
+        self.views = Views.from_json_file(data_dir / "views.json")
         self.__name = name
         self.trace_source = NullTraceSource(self)
         self.__implied_dt = implied_dt
@@ -58,12 +63,6 @@ class Project(JsonSerializable):
                 return float(numpy.std(self.traces(version = trace_version, trace_name = trace_name)[0].y()))
             case _:
                 raise RuntimeError(f"Unsupported function name: {function_name}")
-
-    def exists(self) -> bool:
-        """
-        :return: True or False indicating if such a project exist on the filesystem.
-        """
-        return self.project_dir.exists()
 
     def persist(self) -> None:
         """
@@ -264,6 +263,10 @@ class ProjectManager:
         Project.set_trace_source_from_csv_file(...) or some such function. If project under this name already exist,
         then RuntimeError is raised.
         """
+        project_dir = self.__projects_dir / project_name
+        if project_dir.exists():
+            raise RuntimeError(f"Project [{project_name}] already exists.")
+
         project = Project(
             projects_dir = self.__projects_dir,
             name = project_name,
@@ -272,8 +275,5 @@ class ProjectManager:
             description = "",
             dt_unit = "ms"
         )
-        if project.exists():
-            raise RuntimeError(f"Project [{project_name}] already exists.")
-        else:
-            project.persist()
-            return project
+        project.persist()
+        return project
