@@ -32,14 +32,6 @@ def SI(text: str) -> QStandardItem:
     return item
 
 
-# class ID(QAbstractItemDelegate):
-#     def __init__(self, parent = None):
-#         super().__init__(parent)
-#
-#     def setModelData(self, editor, model, index):
-#         super().setModelData(editor, model, index)
-
-
 class ViewConfigDialogOld(Dialog):
     def __init__(self, view_window):
         super().__init__(parent = view_window, windowTitle = f"Config for [{view_window.view_spec.name}]")

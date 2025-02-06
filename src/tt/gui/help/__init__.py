@@ -6,7 +6,7 @@ HELP = {
         <ul>
         <li><em><b>Left Y-Axis Label<b></em> - label to be shown on the left y-axis. Note that even<br/>if set 
         it will not appear if there are no traces that use left y-axis.<br/></li>
-        <li><em><b>Right Y-Axis Label</b></em> - label to be shown on the left y-axis. Note that even<br/>if set 
+        <li><em><b>Right Y-Axis Label</b></em> - label to be shown on the right y-axis. Note that even<br/>if set 
         it will not appear if there are no traces that use left y-axis.<br/></li>
         <li><em><b>X-Axis Label</b></em> - label to be shown on the x-axis. Note that if set, then<br/>time unit 
         (as configured in the project) will also be appended to this label.<br/></li>
@@ -36,5 +36,35 @@ HELP = {
         enable showing legends.<br/></li>
         </ul>
         </html>       
+        """,
+    "trace_config_dialog":
+        """
+        <html>
+        <ul>
+        <li><em><b>Figure title</b></em> - text that will appear right above the trace plot<br/></li>
+        <li><em><b>Show Legend</b></em> - show or no-show legend associated with this trace. If enabled<br/>
+        legend text is a trace label optionally followed values of stat. functions (see below).<br/>
+        If multiple traces are rendered, then label will also include trace version number.<br/></li>
+        <li><em><b>Legend Location</b></em> - position in the plot where legend will be placed.<br/></li>
+        <li><em><b>X-Axis Label</b></em> - label to be shown on the x-axis. Note that if set, then<br/>
+        time unit (as configured in the project) will also be appended to this label.<br/></li>
+        <li><em><b>Y-Axis Label</b></em> - label to be shown on the y-axis.<br/></li>
+        <li><em><b>Show Grid</b></em> - is grid to be shown in this plot.<br></li>
+        <li><em><b>Linear Transform</b></em> - <code>Y' = scale * Y + offset</code><br/></li>
+        <li><em><b>Overlay Filtered Signal</b></em> - add signal that passed through one of two filters.<br>
+            <ul>
+            <li><em><b>Savitsky-Golay</b></em> - savgol filter. Associated parameter is window<br/>
+            width which could be in percentage of data points (add '%' sign) or in<br/>
+            absolute number of data points.<br/></li>
+            <li><em><b>Lowpass</b></em> - digital Butterworth lowpass filter. Associated parameter is<br/>
+            cutoff frequency and must include unit such KHz, MHz and so on.<br/></li>
+            </ul>
+        </li>
+        <li><em><b>Stat Functions</b></em> - functions to compute for this trace. Possible
+        functions are<br/><em>min</em>, <em>max</em>, <em>range = max - min</em>, <em>mean</em>, <em>stdev</em>.
+        If configured, computed values<br/>will appear in the legend. Thus to see them you need 
+        make sure that<br/><em>Show Legend</em> (see above) is checked. </li>
+        </ul>
+        </html>
         """
 }
