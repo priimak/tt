@@ -187,11 +187,14 @@ class PlotFigure(QWidget):
                                          color = "green")
 
             assert self.app.project is not None
-            y_filtered = self.original_trace.overlay.apply(
-                dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
-            )
-            if y_filtered is not None:
-                self.ax.plot(x, y_filtered, "-", color = "black")
+            try:
+                y_filtered = self.original_trace.overlay.apply(
+                    dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
+                )
+                if y_filtered is not None:
+                    self.ax.plot(x, y_filtered, "-", color = "black")
+            except Exception as ex:
+                self.app.show_error(f"Failed to apply overlay. {ex}")
 
             if self.original_trace.stat_functions != []:
                 altered_label: str = self.plt1[0].get_label()
@@ -216,11 +219,14 @@ class PlotFigure(QWidget):
                                          color = "blue")
 
             assert self.app.project is not None
-            y_filtered = self.original_trace.overlay.apply(
-                dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
-            )
-            if y_filtered is not None:
-                self.ax.plot(x, y_filtered, "-", color = "red")
+            try:
+                y_filtered = self.original_trace.overlay.apply(
+                    dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
+                )
+                if y_filtered is not None:
+                    self.ax.plot(x, y_filtered, "-", color = "red")
+            except Exception as ex:
+                self.app.show_error(f"Failed to apply overlay. {ex}")
 
             if self.original_trace.stat_functions != []:
                 altered_label: str = self.plt2[0].get_label()
