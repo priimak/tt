@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy
 
+from tt.data.function import Function
 from tt.data.jsonable import JsonSerializable
 from tt.data.trace import Trace, TracesConfig, TraceState
 from tt.data.trace_source import TraceSource, NullTraceSource, CSVFileTraceSource
@@ -51,16 +52,16 @@ class Project(JsonSerializable):
                             offset: float) -> float:
         match function_name:
             case "min":
-                return min(self.traces(version = trace_version, trace_name = trace_name)[0].y())
+                return min(self.traces(version = trace_version, trace_name = trace_name)[0].y(self))
             case "max":
-                return max(self.traces(version = trace_version, trace_name = trace_name)[0].y())
+                return max(self.traces(version = trace_version, trace_name = trace_name)[0].y(self))
             case "range":
-                ys = self.traces(version = trace_version, trace_name = trace_name)[0].y()
+                ys = self.traces(version = trace_version, trace_name = trace_name)[0].y(self)
                 return max(ys) - min(ys)
             case "mean":
-                return float(numpy.mean(self.traces(version = trace_version, trace_name = trace_name)[0].y()))
+                return float(numpy.mean(self.traces(version = trace_version, trace_name = trace_name)[0].y(self)))
             case "stdev":
-                return float(numpy.std(self.traces(version = trace_version, trace_name = trace_name)[0].y()))
+                return float(numpy.std(self.traces(version = trace_version, trace_name = trace_name)[0].y(self)))
             case _:
                 raise RuntimeError(f"Unsupported function name: {function_name}")
 
@@ -205,7 +206,8 @@ class Project(JsonSerializable):
         """
         Returns list of Trace(s) for a given version. Version can be negative in which
         case it refers to index from the right simular to indexing in python arrays. This version -1 refers to
-        the latest version, version -2 to the previous one and so on.
+        the latest version, version -2 to the previous one and so on. Argument trace_name refers to
+        both name and label.
         """
         traces = TracesConfig(
             config_file = self.project_dir / "data" / "config.json",
@@ -216,7 +218,28 @@ class Project(JsonSerializable):
         if trace_name is None:
             return traces
         else:
-            return [t for t in traces if t.name == trace_name]
+            return [t for t in traces if t.name == trace_name or t.label == trace_name]
+
+    def add_derivative_trace(self, name: str, function: Function) -> None:
+        TracesConfig(
+            config_file = self.project_dir / "data" / "config.json",
+            latest_traces_version = self.latest_traces_version,
+            dt = lambda: self.__implied_dt
+        ).add_trace(name, function)
+
+    def update_derivative_trace(self, name: str, function: Function) -> None:
+        TracesConfig(
+            config_file = self.project_dir / "data" / "config.json",
+            latest_traces_version = self.latest_traces_version,
+            dt = lambda: self.__implied_dt
+        ).update_derivative_trace(name, function)
+
+    def delete_derivative_trace(self, name: str) -> None:
+        TracesConfig(
+            config_file = self.project_dir / "data" / "config.json",
+            latest_traces_version = self.latest_traces_version,
+            dt = lambda: self.__implied_dt
+        ).delete_derivative_trace(name)
 
 
 class ProjectManager:

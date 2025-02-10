@@ -51,7 +51,7 @@ class TraceConfigDialog(Dialog):
         super().__init__(parent = plot_figure, windowTitle = f"Config for trace [{plot_figure.original_trace.label}]",
                          modal = True)
         self.suppress_change_processing = True
-        from tt.gui.figure import PlotFigure
+        from tt.gui.trace.figure import PlotFigure
         self.figure: PlotFigure = plot_figure
 
         legend_location = QComboBox()

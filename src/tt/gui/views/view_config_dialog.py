@@ -1,7 +1,7 @@
 from PySide6.QtCore import QAbstractItemModel, Qt, Signal, QPoint
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QMouseEvent, QIntValidator
 from PySide6.QtWidgets import QTreeView, QAbstractItemView, QFrame, QHBoxLayout, QLabel, QGridLayout, QWidget, \
-    QTableWidget, QTableWidgetItem, QHeaderView, QLayoutItem
+    QLayoutItem
 from pytide6 import Dialog, VBoxLayout, W, HBoxPanel, PushButton, Layout, ComboBox, CheckBox, VBoxPanel
 from pytide6.inputs import LineEdit, LineTextInput
 from typing_extensions import override
@@ -9,6 +9,8 @@ from typing_extensions import override
 from tt.data.legends import LEGEND_LOCATIONS
 from tt.data.view import SubPlot, TraceSpec, AxisLean
 from tt.gui.app import App
+from tt.gui.elemental import HLine
+from tt.gui.trace.trace_picker import TracePicker
 
 
 class TModel(QAbstractItemModel):
@@ -75,53 +77,6 @@ class ViewConfigDialogOld(Dialog):
 
     def edit_item(self, item):
         print(item)
-
-
-class AddTraceDialog(Dialog):
-    def __init__(self, parent):
-        super().__init__(parent, windowTitle = "Add trace")
-
-        # noinspection PyTypeChecker
-        self.subplot_dialog: EditSubplotDialog = parent
-
-        trace_table = QTableWidget(self)
-        trace_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        trace_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        trace_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        trace_table.setColumnCount(2)
-        trace_table.setHorizontalHeaderLabels(["Name", "Label"])
-        assert self.subplot_dialog.app.project is not None
-        traces = self.subplot_dialog.app.project.traces(version = 1)
-        trace_table.setRowCount(len(traces))
-        for i, trace in enumerate(traces):
-            item = QTableWidgetItem(trace.name)
-            trace_table.setItem(i, 0, item)
-            trace_table.setItem(i, 1, QTableWidgetItem(trace.label))
-
-        def add_trace(event: QMouseEvent):
-            trace = traces[trace_table.currentRow()]
-            self.subplot_dialog.subplot.remove_trace_spec(trace.name, -1)
-            self.subplot_dialog.subplot.add_trace_spec(TraceSpec(
-                name = trace.name, trace_version = -1, on_axis = AxisLean.LEFT, color = "auto",
-                show_filtered_trace = False, show_legends = False
-            ))
-            self.subplot_dialog.build_traces_panel()
-            self.close()
-
-        trace_table.mouseDoubleClickEvent = add_trace
-
-        self.setLayout(VBoxLayout([
-            QLabel(f"Add trace"),
-            trace_table,
-            HBoxPanel([W(HBoxPanel(), stretch = 1), PushButton("Ok", on_clicked = self.close)]),
-        ]))
-
-
-class HLine(QFrame):
-    def __init__(self):
-        super().__init__()
-        self.setFrameShape(QFrame.Shape.HLine)
-        self.setFrameShadow(QFrame.Shadow.Sunken)
 
 
 class EditSubplotDialog(Dialog):
@@ -334,7 +289,18 @@ class EditSubplotDialog(Dialog):
             self.subplot_label.update_label()
 
     def show_add_trace_dialog(self) -> None:
-        AddTraceDialog(self).exec()
+        def add_trace(trace_label: str):
+            trs = self.project.traces(-1, trace_name = trace_label)
+            if trs != []:
+                self.subplot.remove_trace_spec(trs[0].name, -1)
+                self.subplot.add_trace_spec(TraceSpec(
+                    name = trs[0].name, trace_version = -1, on_axis = AxisLean.LEFT, color = "auto",
+                    show_filtered_trace = False, show_legends = False
+                ))
+                self.build_traces_panel()
+
+        win = TracePicker(self, self.app, add_trace)
+        win.exec()
 
 
 class SubplotLabel(QFrame):

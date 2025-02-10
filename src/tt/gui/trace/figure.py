@@ -14,7 +14,7 @@ from matplotlib.lines import Line2D
 
 from tt.data.punits import dt
 from tt.data.trace import Overlay
-from tt.gui.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
+from tt.gui.trace.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
 
 
 class PlotFigure(QWidget):
@@ -55,7 +55,7 @@ class PlotFigure(QWidget):
         v2.currentTextChanged.connect(self.set_v2_version)
         toolbar.addWidget(v2)
 
-        settings_png = Path(__file__).parent / "settings.png"
+        settings_png = Path(__file__).parent.parent / "settings.png"
         config_action = QAction(QIcon(f"{settings_png.absolute()}"), "Trace Config", self)
         config_action.triggered.connect(self.show_config)
         toolbar.addAction(config_action)
@@ -72,7 +72,7 @@ class PlotFigure(QWidget):
         if x_label != "":
             self.ax.set_xlabel(f"{x_label} [{self.app.project.dt_unit}]")
         self.ax.set_ylabel(self.trace_2.y_label)
-        x, y = self.trace_2.xy
+        x, y = self.trace_2.xy(app.project)
         self.plt1: Line2D | None = None
         self.plt2: Line2D = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
         self.smooth_enabled = False
@@ -178,7 +178,7 @@ class PlotFigure(QWidget):
         self.ax.set_ylabel(self.original_trace.y_label)
 
         if self.trace_1 is not None:
-            x, y = self.trace_1.xy
+            x, y = self.trace_1.xy(self.app.project)
 
             if self.trace_2 is None:
                 self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label}", color = "green")
@@ -208,7 +208,7 @@ class PlotFigure(QWidget):
                 self.plt1[0].set_label(altered_label)
 
         if self.trace_2 is not None:
-            x, y = self.trace_2.xy
+            x, y = self.trace_2.xy(self.app.project)
             if self.trace_1 is None:
                 self.plt2 = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
             else:

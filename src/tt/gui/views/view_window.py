@@ -14,8 +14,8 @@ from typing_extensions import override
 from tt.data.punits import dt
 from tt.data.trace import Trace
 from tt.data.view import ViewSpec, SubPlot, AxisLean
-from tt.gui.figure import PlotFigure
-from tt.gui.trace_config_dialog import STAT_FUNC_NAME_2_LABEL
+from tt.gui.trace.figure import PlotFigure
+from tt.gui.trace.trace_config_dialog import STAT_FUNC_NAME_2_LABEL
 from tt.gui.views.view_config_dialog import ViewConfigDialog
 
 
@@ -113,7 +113,7 @@ class ViewWindow(QWidget):
                     traces: list[Trace] = project.traces(version = ts.trace_version, trace_name = ts.name)
                     if traces != []:
                         trace = traces[0]
-                        x, y = trace.xy
+                        x, y = trace.xy(self.app.project)
                         target_axis: Axes = left_axis if ts.on_axis == AxisLean.LEFT else right_axis  # pyright: ignore [reportAssignmentType]
                         if ts.color == "auto":
                             plt = target_axis.plot(x, y, "-", label = "None")
