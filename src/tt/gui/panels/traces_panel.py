@@ -1,15 +1,17 @@
+import re
 from functools import cache
 from typing import override, Any
 
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex, QPersistentModelIndex
-from PySide6.QtGui import QContextMenuEvent
-from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QSpacerItem
+from PySide6.QtGui import QContextMenuEvent, QColor
+from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QSpacerItem, QMessageBox
 from pytide6 import VBoxPanel, Dialog, VBoxLayout, HBoxPanel, LineTextInput, RichTextLabel
 from pytide6.buttons import PushButton
 from pytide6.widget_wrapper import W
 
 from tt.data.trace import TraceState, Trace, Traces
 from tt.gui.app import App
+from tt.gui.trace.create_new_trace_dialog import CreateNewTraceDialog
 
 INTERNAL_CHANGE_ID: int = 1
 
@@ -32,7 +34,7 @@ class SelectTracesVersionsDialg(Dialog):
                 all_traces: list[list[Trace]] = [app.project.traces(v, trace_name = trace_name) for v in versions]
                 traces: list[Trace] = [t[0] for t in all_traces if t != []]
                 self.close()
-                Traces(traces).show_in_new_window()
+                Traces(traces).show_in_new_window(app.project)
             except ValueError:
                 app.show_error("Invalid trace versions format")
 
@@ -42,6 +44,9 @@ class SelectTracesVersionsDialg(Dialog):
                 QSpacerItem, PushButton("Ok", on_clicked = on_ok), PushButton("Cancel", on_clicked = self.close)
             ])
         ]))
+
+
+TRACE_LABEL_VALID_REGEX = re.compile("^[a-zA-Z0-9\\[\\]_\\-+. ]+$")
 
 
 class TraceLabelChangeDialog(Dialog):
@@ -57,6 +62,9 @@ class TraceLabelChangeDialog(Dialog):
                 app.show_error("Please enter a trace label")
             elif new_trace_label in [t.label for t in app.project.traces(-1)]:
                 app.show_error("Trace with this label already exists. Please pick a different label.")
+            elif TRACE_LABEL_VALID_REGEX.match(new_trace_label) is None:
+                app.show_error(
+                    "Trace label must contain only letters, numbers, space and \"[\", \"]\", \"_\", \"-\", \"+\", \".\"")
             else:
                 trace.label = new_trace_label
                 app.notify_tables_require_change()
@@ -71,6 +79,8 @@ class TraceLabelChangeDialog(Dialog):
 
 
 class TracesFrameModel(QAbstractTableModel):
+    DERIVATIVE_TRACE_COLOR = QColor("red")
+
     def __init__(self, app: App, trace_state: TraceState):
         super().__init__()
         self.app = app
@@ -101,14 +111,24 @@ class TracesFrameModel(QAbstractTableModel):
         assert self.app.project is not None
         return [t.label for t in self.app.project.traces(-1) if t.state == self.trace_state]
 
+    @cache
+    def __tdata(self, project_name: str, trace_version: int, change_id: int) -> Any:
+        assert self.app.project is not None
+        return [t for t in self.app.project.traces(-1) if t.state == self.trace_state]
+
     @override
     def data(self, index: QModelIndex | QPersistentModelIndex, role: int = 1) -> Any:
-        if role == Qt.ItemDataRole.DisplayRole and self.app.project is not None:
-            return self.__data(
-                self.app.project.name, self.app.project.latest_traces_version, self.app.taces_views_change_id
-            )[index.row()]
-        else:
-            return None
+        if self.app.project is not None:
+            if role == Qt.ItemDataRole.DisplayRole:
+                return self.__data(
+                    self.app.project.name, self.app.project.latest_traces_version, self.app.taces_views_change_id
+                )[index.row()]
+            elif role == Qt.ItemDataRole.ForegroundRole:
+                d = self.__tdata(self.app.project.name, self.app.project.latest_traces_version,
+                                 self.app.taces_views_change_id)[index.row()]
+                return TracesFrameModel.DERIVATIVE_TRACE_COLOR if d.is_derivative else None
+            else:
+                return None
 
 
 class TracesView(QTableView):
@@ -134,6 +154,13 @@ class TracesView(QTableView):
         else:
             menu.addAction("Mark as active", self.mark_as_active)
 
+        selection = self.selectedIndexes()
+        if selection != [] and self.app.project is not None:
+            tr = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
+            if tr.is_derivative:
+                menu.addAction("Delete", self.delete_trace)
+                menu.addAction("Edit Definition", self.edit_derivative_trace_definition)
+
         menu.popup(arg__1.globalPos())
 
     def render_latest_trace(self) -> None:
@@ -151,13 +178,32 @@ class TracesView(QTableView):
             else:
                 trace_latest: Trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
                 trace_prev: Trace = self.app.project.traces(-2, self.trace_state)[selection[0].row()]
-                Traces([trace_latest, trace_prev]).show_in_new_window()
+                Traces([trace_latest, trace_prev]).show_in_new_window(self.app.project)
 
     def render_specific_versions_of_a_trace(self):
         selection = self.selectedIndexes()
         if selection != [] and self.app.project is not None:
             trace_latest: Trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
             SelectTracesVersionsDialg(self, self.app, trace_latest.name).show()
+
+    def delete_trace(self) -> None:
+        selection = self.selectedIndexes()
+        if selection != [] and self.app.project is not None:
+            trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
+
+            ret = QMessageBox.question(self, f"Delete trace {trace.label}?", f"Delete trace {trace.label}?",
+                                       QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+            if ret == QMessageBox.StandardButton.Yes:
+                self.app.project.delete_derivative_trace(trace.name)
+                self.app.notify_tables_require_change()
+
+    def edit_derivative_trace_definition(self) -> None:
+        selection = self.selectedIndexes()
+        if selection != [] and self.app.project is not None:
+            trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
+            win = CreateNewTraceDialog(self, self.app, trace)
+            win.adjustSize()
+            win.exec()
 
     def rename_trace(self) -> None:
         selection = self.selectedIndexes()

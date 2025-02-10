@@ -14,7 +14,7 @@ from matplotlib.lines import Line2D
 
 from tt.data.punits import dt
 from tt.data.trace import Overlay
-from tt.gui.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
+from tt.gui.trace.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
 
 
 class PlotFigure(QWidget):
@@ -55,7 +55,7 @@ class PlotFigure(QWidget):
         v2.currentTextChanged.connect(self.set_v2_version)
         toolbar.addWidget(v2)
 
-        settings_png = Path(__file__).parent / "settings.png"
+        settings_png = Path(__file__).parent.parent / "settings.png"
         config_action = QAction(QIcon(f"{settings_png.absolute()}"), "Trace Config", self)
         config_action.triggered.connect(self.show_config)
         toolbar.addAction(config_action)
@@ -72,7 +72,7 @@ class PlotFigure(QWidget):
         if x_label != "":
             self.ax.set_xlabel(f"{x_label} [{self.app.project.dt_unit}]")
         self.ax.set_ylabel(self.trace_2.y_label)
-        x, y = self.trace_2.xy
+        x, y = self.trace_2.xy(app.project)
         self.plt1: Line2D | None = None
         self.plt2: Line2D = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
         self.smooth_enabled = False
@@ -178,7 +178,7 @@ class PlotFigure(QWidget):
         self.ax.set_ylabel(self.original_trace.y_label)
 
         if self.trace_1 is not None:
-            x, y = self.trace_1.xy
+            x, y = self.trace_1.xy(self.app.project)
 
             if self.trace_2 is None:
                 self.plt1 = self.ax.plot(x, y, "-", label = f"{self.trace_1.label}", color = "green")
@@ -187,11 +187,14 @@ class PlotFigure(QWidget):
                                          color = "green")
 
             assert self.app.project is not None
-            y_filtered = self.original_trace.overlay.apply(
-                dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
-            )
-            if y_filtered is not None:
-                self.ax.plot(x, y_filtered, "-", color = "black")
+            try:
+                y_filtered = self.original_trace.overlay.apply(
+                    dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
+                )
+                if y_filtered is not None:
+                    self.ax.plot(x, y_filtered, "-", color = "black")
+            except Exception as ex:
+                self.app.show_error(f"Failed to apply overlay. {ex}")
 
             if self.original_trace.stat_functions != []:
                 altered_label: str = self.plt1[0].get_label()
@@ -200,15 +203,14 @@ class PlotFigure(QWidget):
                         function_name = fname,
                         trace_name = self.original_trace.name,
                         trace_version = self.trace_1.version,
-                        scaling_factor = self.original_trace.y_scale,
-                        offset = self.original_trace.y_offset,
+                        cache_id = self.original_trace.cache_id()
                     )
-                    v = float(f"{stat_value:.2g}")
+                    v = round(stat_value, 2)
                     altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"
                 self.plt1[0].set_label(altered_label)
 
         if self.trace_2 is not None:
-            x, y = self.trace_2.xy
+            x, y = self.trace_2.xy(self.app.project)
             if self.trace_1 is None:
                 self.plt2 = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
             else:
@@ -216,11 +218,14 @@ class PlotFigure(QWidget):
                                          color = "blue")
 
             assert self.app.project is not None
-            y_filtered = self.original_trace.overlay.apply(
-                dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
-            )
-            if y_filtered is not None:
-                self.ax.plot(x, y_filtered, "-", color = "red")
+            try:
+                y_filtered = self.original_trace.overlay.apply(
+                    dt(f"{self.app.project.implied_dt} {self.app.project.dt_unit}"), x, y
+                )
+                if y_filtered is not None:
+                    self.ax.plot(x, y_filtered, "-", color = "red")
+            except Exception as ex:
+                self.app.show_error(f"Failed to apply overlay. {ex}")
 
             if self.original_trace.stat_functions != []:
                 altered_label: str = self.plt2[0].get_label()
@@ -229,10 +234,9 @@ class PlotFigure(QWidget):
                         function_name = fname,
                         trace_name = self.original_trace.name,
                         trace_version = self.trace_2.version,
-                        scaling_factor = self.original_trace.y_scale,
-                        offset = self.original_trace.y_offset,
+                        cache_id = self.trace_2.cache_id()
                     )
-                    v = float(f"{stat_value:.2g}")
+                    v = round(stat_value, 2)
                     altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"
                 self.plt2[0].set_label(altered_label)
 

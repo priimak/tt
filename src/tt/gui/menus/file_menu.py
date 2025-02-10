@@ -5,6 +5,7 @@ from tt.gui.app import App
 from tt.gui.project_management.new_project_dialog import CreateNewProject
 from tt.gui.project_management.open_existing_project_dialog import OpenProjectDialog
 from tt.gui.settings.settings_dialog import SettingsDialog
+from tt.gui.trace.create_new_trace_dialog import mk_new_trace_dialog
 from tt.gui.views.create_view_dialog import mk_create_new_view
 
 
@@ -54,13 +55,21 @@ class FileMenu(QMenu):
         )  # pyright: ignore [reportAssignmentType]
         create_view_action.setEnabled(False)
 
-        self.addAction("Create Derivative &Trace", ).setEnabled(False)
+        create_new_trace: QAction = self.addAction(
+            "Create Derivative &Trace",
+            mk_new_trace_dialog(parent, app)
+        )  # pyright: ignore [reportAssignmentType]
+        create_new_trace.setEnabled(False)
 
         app.project_opened_menus_enabled = lambda: (
-            delete_project_action.setEnabled(False), create_view_action.setEnabled(True)
+            delete_project_action.setEnabled(False),
+            create_view_action.setEnabled(True),
+            create_new_trace.setEnabled(True)
         )
         app.project_opened_menus_disable = lambda: (
-            delete_project_action.setEnabled(False), create_view_action.setEnabled(False)
+            delete_project_action.setEnabled(False),
+            create_view_action.setEnabled(False),
+            create_new_trace.setEnabled(False)
         )
 
         self.addSeparator()

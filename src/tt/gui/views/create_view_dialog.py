@@ -1,3 +1,5 @@
+from typing import Callable
+
 from PySide6.QtWidgets import QLabel
 from pytide6 import Dialog, LineTextInput, ComboBox, VBoxLayout, HBoxPanel, W, PushButton
 
@@ -66,7 +68,7 @@ class CreateNewView(Dialog):
         ))
 
 
-def mk_create_new_view(parent, app: App):
+def mk_create_new_view(parent, app: App) -> Callable[[], None]:
     def create_new_view():
         cview = CreateNewView(parent, app)
         cview.exec()
