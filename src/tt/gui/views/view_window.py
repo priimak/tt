@@ -136,8 +136,7 @@ class ViewWindow(QWidget):
                                     function_name = fname,
                                     trace_name = trace.name,
                                     trace_version = trace.version,
-                                    scaling_factor = trace.y_scale,
-                                    offset = trace.y_offset
+                                    cache_id = trace.cache_id()
                                 )
                                 v = float(f"{stat_value:.2g}")
                                 altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"

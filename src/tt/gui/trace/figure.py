@@ -203,10 +203,9 @@ class PlotFigure(QWidget):
                         function_name = fname,
                         trace_name = self.original_trace.name,
                         trace_version = self.trace_1.version,
-                        scaling_factor = self.original_trace.y_scale,
-                        offset = self.original_trace.y_offset,
+                        cache_id = self.original_trace.cache_id()
                     )
-                    v = float(f"{stat_value:.2g}")
+                    v = round(stat_value, 2)
                     altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"
                 self.plt1[0].set_label(altered_label)
 
@@ -235,10 +234,9 @@ class PlotFigure(QWidget):
                         function_name = fname,
                         trace_name = self.original_trace.name,
                         trace_version = self.trace_2.version,
-                        scaling_factor = self.original_trace.y_scale,
-                        offset = self.original_trace.y_offset,
+                        cache_id = self.trace_2.cache_id()
                     )
-                    v = float(f"{stat_value:.2g}")
+                    v = round(stat_value, 2)
                     altered_label += f", ${STAT_FUNC_NAME_2_LABEL[fname]}={v}$"
                 self.plt2[0].set_label(altered_label)
 

@@ -191,6 +191,10 @@ class Trace(JsonSerializable):
         self.__derivative_func = tcf.get_value("derivative_function", "")
         self.__derivative_params = tcf.get_value("derivative_params", {})
 
+    def cache_id(self) -> str:
+        return (f"{self.y_scale} :: {self.y_offset} :: {self.__derivative} :: {self.__derivative_sources} "
+                f":: {self.__derivative_func} :: {self.__derivative_params}")
+
     def set_stat_functions(self, stat_functions: list[str]) -> None:
         self.stat_functions = stat_functions.copy()
         self.persist()
@@ -317,7 +321,7 @@ class Trace(JsonSerializable):
             _, ys = Functions.value_of(
                 project, self.__derivative_func, self.__derivative_sources, self.__derivative_params
             ).xy(self.version)
-            return ys
+            return [(self.y_scale * v + self.y_offset) for v in ys]
         else:
             df: DataFrame = self.__config.df(self.version)
             y_values = df.get_column(self.name).to_list()
@@ -329,9 +333,10 @@ class Trace(JsonSerializable):
 
     def xy(self, project) -> tuple[list[float], list[float]]:
         if self.__derivative:
-            return Functions.value_of(
+            xs, ys = Functions.value_of(
                 project, self.__derivative_func, self.__derivative_sources, self.__derivative_params
             ).xy(self.version)
+            return xs, [(self.y_scale * v + self.y_offset) for v in ys]
         else:
             dt = self.__config.dt()
             return self.__t(dt, len(self.y(project))), self.y(project)

@@ -48,8 +48,7 @@ class Project(JsonSerializable):
                             function_name: str,
                             trace_name: str,
                             trace_version: int,
-                            scaling_factor: float,
-                            offset: float) -> float:
+                            cache_id: str) -> float:
         match function_name:
             case "min":
                 return min(self.traces(version = trace_version, trace_name = trace_name)[0].y(self))
