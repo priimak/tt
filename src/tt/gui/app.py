@@ -40,18 +40,26 @@ class App:
         self.unregister_window: Callable[[QWidget], None] = lambda _: None
         self.close_all_plots: Callable[[], None] = lambda: None
 
-    def set_new_open_project(self, project: Project) -> None:
+    def set_new_open_project(self, project: Project | None) -> None:
         self.project = project
-        self.set_opened_project_label(
-            f"Project <em><b>{project.name}</b></em> tracking file <em><b>{project.trace_source.uri()}</b></em>"
-        )
-        self.set_showing_version_label(f"Traces Version #{project.latest_traces_version}")
-        self.notify_tables_require_change()
-        self.notify_project_panel_on_project_load()
-        self.reload_traces_menu_enable()
-        self.set_reference_change_id(project.trace_source.change_id())
-        self.app_persistence.config.set_value("last_opened_project", project.name)
-        self.project_opened_menus_enabled()
+        if project is None:
+            self.set_opened_project_label("")
+            self.set_showing_version_label("")
+            self.notify_tables_require_change()
+            self.notify_project_panel_on_project_load()
+            self.reload_traces_menu_enable()
+            self.project_opened_menus_disable()
+        else:
+            self.set_opened_project_label(
+                f"Project <em><b>{project.name}</b></em> tracking file <em><b>{project.trace_source.uri()}</b></em>"
+            )
+            self.set_showing_version_label(f"Traces Version #{project.latest_traces_version}")
+            self.notify_tables_require_change()
+            self.notify_project_panel_on_project_load()
+            self.reload_traces_menu_enable()
+            self.set_reference_change_id(project.trace_source.change_id())
+            self.app_persistence.config.set_value("last_opened_project", project.name)
+            self.project_opened_menus_enabled()
         self.notify_views_require_change()
 
     def set_reference_change_id(self, change_id: float) -> None:

@@ -299,3 +299,8 @@ class ProjectManager:
         )
         project.persist()
         return project
+
+    def delete_project(self, project_name: str) -> None:
+        project_dir = self.__projects_dir / project_name
+        if project_dir.exists():
+            shutil.rmtree(project_dir)
