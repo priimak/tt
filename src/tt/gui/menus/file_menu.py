@@ -1,5 +1,5 @@
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu, QMenuBar, QWidget
+from PySide6.QtWidgets import QMenu, QMenuBar, QWidget, QMessageBox
 
 from tt.gui.app import App
 from tt.gui.project_management.new_project_dialog import CreateNewProject
@@ -40,7 +40,16 @@ class FileMenu(QMenu):
         app.reload_traces_menu_disable = lambda: reload_trs_action.setEnabled(False)
 
         def delete_opened_project():
-            pass
+            if app.project is not None:
+                ret = QMessageBox.question(dialogs_parent, "Delete project?",
+                                           "Please confirm that you want to delete opened project?",
+                                           QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+                if ret == QMessageBox.StandardButton.Yes:
+                    try:
+                        app.pm.delete_project(app.project.name)
+                        app.set_new_open_project(None)
+                    except Exception as ex:
+                        app.show_error(f"Error deleting project. {ex}")
 
         # noinspection PyTypeChecker
         delete_project_action: QAction = self.addAction("&Delete Project",
@@ -62,11 +71,13 @@ class FileMenu(QMenu):
         create_new_trace.setEnabled(False)
 
         app.project_opened_menus_enabled = lambda: (
-            delete_project_action.setEnabled(False),
+            reload_trs_action.setEnabled(True),
+            delete_project_action.setEnabled(True),
             create_view_action.setEnabled(True),
             create_new_trace.setEnabled(True)
         )
         app.project_opened_menus_disable = lambda: (
+            reload_trs_action.setEnabled(False),
             delete_project_action.setEnabled(False),
             create_view_action.setEnabled(False),
             create_new_trace.setEnabled(False)

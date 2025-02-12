@@ -35,8 +35,11 @@ def main():
     if persistence.config.get_value("open_last_opened_project_on_load", bool):
         last_opened_project_name = persistence.config.get_value("last_opened_project", str)
         if last_opened_project_name is not None and last_opened_project_name.strip() != "":
-            project = win.app.pm.open_existing_project(last_opened_project_name)
-            win.app.set_new_open_project(project)
+            try:
+                project = win.app.pm.open_existing_project(last_opened_project_name)
+                win.app.set_new_open_project(project)
+            except Exception as ex:
+                win.app.show_error(f"Filed to re-open project. {ex}")
 
     sys.exit(app.exec())
 
