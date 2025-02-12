@@ -4,47 +4,16 @@ from typing import override, Any
 
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex, QPersistentModelIndex
 from PySide6.QtGui import QContextMenuEvent, QColor
-from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QSpacerItem, QMessageBox
+from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QMessageBox
 from pytide6 import VBoxPanel, Dialog, VBoxLayout, HBoxPanel, LineTextInput, RichTextLabel
 from pytide6.buttons import PushButton
 from pytide6.widget_wrapper import W
 
-from tt.data.trace import TraceState, Trace, Traces
+from tt.data.trace import TraceState, Trace
 from tt.gui.app import App
 from tt.gui.trace.create_new_trace_dialog import CreateNewTraceDialog
 
 INTERNAL_CHANGE_ID: int = 1
-
-
-class SelectTracesVersionsDialg(Dialog):
-    def __init__(self, parent, app: App, trace_name: str):
-        super().__init__(parent, windowTitle = "Select traces version", modal = True)
-
-        trace_versions_to_plot = LineTextInput("Pick trace versions to plot", "1,-1")
-
-        def on_ok():
-            version_str = trace_versions_to_plot.text().strip()
-            try:
-                assert app.project is not None
-                versions = [int(vs) for vs in version_str.split(",")]
-                if len([v for v in versions if v == 0]) > 0:
-                    app.show_error("Trace versions start from 1.")
-                    return
-
-                all_traces: list[list[Trace]] = [app.project.traces(v, trace_name = trace_name) for v in versions]
-                traces: list[Trace] = [t[0] for t in all_traces if t != []]
-                self.close()
-                Traces(traces).show_in_new_window(app.project)
-            except ValueError:
-                app.show_error("Invalid trace versions format")
-
-        self.setLayout(VBoxLayout([
-            trace_versions_to_plot,
-            HBoxPanel([
-                QSpacerItem, PushButton("Ok", on_clicked = on_ok), PushButton("Cancel", on_clicked = self.close)
-            ])
-        ]))
-
 
 TRACE_LABEL_VALID_REGEX = re.compile("^[a-zA-Z0-9\\[\\]_\\-+. ]+$")
 
@@ -145,7 +114,6 @@ class TracesView(QTableView):
 
         menu.addAction("Plot latest version of the trace", self.render_latest_trace)
         menu.addAction("Plot latest and previous version of the trace", self.render_latest_and_previous_trace)
-        menu.addAction("Plot specific versions of the trace", self.render_specific_versions_of_a_trace)
 
         menu.addSeparator()
         menu.addAction("Rename trace label", self.rename_trace)
@@ -167,7 +135,7 @@ class TracesView(QTableView):
         selection = self.selectedIndexes()
         if selection != [] and self.app.project is not None:
             self.app.project.traces(-1, self.trace_state)[selection[0].row()].show_in_new_window(
-                self.app.main_window(), self.app.super_parent()
+                self.app.main_window()
             )
 
     def render_latest_and_previous_trace(self) -> None:
@@ -178,13 +146,7 @@ class TracesView(QTableView):
             else:
                 trace_latest: Trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
                 trace_prev: Trace = self.app.project.traces(-2, self.trace_state)[selection[0].row()]
-                Traces([trace_latest, trace_prev]).show_in_new_window(self.app.project)
-
-    def render_specific_versions_of_a_trace(self):
-        selection = self.selectedIndexes()
-        if selection != [] and self.app.project is not None:
-            trace_latest: Trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
-            SelectTracesVersionsDialg(self, self.app, trace_latest.name).show()
+                trace_latest.show_in_new_window(self.app.main_window(), trace_prev)
 
     def delete_trace(self) -> None:
         selection = self.selectedIndexes()

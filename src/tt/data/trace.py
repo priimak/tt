@@ -1,14 +1,11 @@
 import json
-from dataclasses import dataclass
 from enum import StrEnum
 from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-import matplotlib.pyplot as plt
 import polars
 from PySide6.QtCore import QRect
-from PySide6.QtWidgets import QWidget
 from polars import DataFrame
 from pytide6 import MainWindow
 
@@ -344,10 +341,10 @@ class Trace(JsonSerializable):
     def x(self, project) -> list[float]:
         return self.__t(self.__config.dt(), len(self.y(project)))
 
-    def show_in_new_window(self, main_window: MainWindow, super_parent: QWidget):
+    def show_in_new_window(self, main_window: MainWindow, prev_trace = None):
         main_window_geometry = main_window.geometry()
         # figure = PlotView(super_parent, main_window.app)
-        figure = PlotFigure(None, self, main_window.app)  # pyright: ignore [reportAttributeAccessIssue]
+        figure = PlotFigure(None, self, main_window.app, prev_trace)  # pyright: ignore [reportAttributeAccessIssue]
         figure.show()
         figure_geometry: QRect = figure.geometry()
         figure.move(
@@ -355,29 +352,3 @@ class Trace(JsonSerializable):
             main_window_geometry.center().y() - int(figure_geometry.height() / 2)
         )
         main_window.app.register_window(figure)  # pyright: ignore [reportAttributeAccessIssue]
-
-
-@dataclass
-class TraceDataVersioned:
-    note: str
-
-
-@dataclass
-class TracesDataVersioned:
-    trace_data: dict[str, TraceDataVersioned]
-
-
-class Traces:
-    def __init__(self, traces: list[Trace]):
-        self.__traces = traces
-
-    def show_in_new_window(self, project, show_legends: bool = True) -> None:
-        fig, ax = plt.subplots()
-        for trace in self.__traces:
-            t, v = trace.xy(project)
-            ax.plot(t, v, "-", label = f"{trace.label} # {trace.version}")
-        if show_legends:
-            plt.legend(loc = "upper right")
-        if fig.canvas.manager is not None:
-            fig.canvas.manager.set_window_title(f"{self.__traces[0].label}")
-        fig.show()

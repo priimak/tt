@@ -20,14 +20,14 @@ from tt.gui.trace.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2
 class PlotFigure(QWidget):
     NEXT_PLOT_ID: int = 0
 
-    def __init__(self, main_window, raw_trace, app):
+    def __init__(self, main_window, raw_trace, app, trace_1 = None):
         from tt.gui.app import App
         self.app: App = app
         super().__init__(main_window)
         self.setWindowFlags(Qt.WindowType.Window)
         from tt.data.trace import Trace
         self.original_trace: Trace = raw_trace
-        self.trace_1: Trace | None = None
+        self.trace_1: Trace | None = trace_1
         self.trace_2: Trace = raw_trace
         self.trace_name = raw_trace.name
         PlotFigure.NEXT_PLOT_ID += 1
@@ -43,7 +43,12 @@ class PlotFigure(QWidget):
         v1 = QComboBox(self)
         v1.addItem("None")
         v1.addItems([f"{v}" for v in reversed(range(1, app.project.latest_traces_version + 1))])
-        v1.setCurrentIndex(0)
+
+        if trace_1 is not None:
+            v1.setCurrentText(f"{trace_1.version}")
+        else:
+            v1.setCurrentIndex(0)
+
         v1.currentTextChanged.connect(self.set_v1_version)
         toolbar.addWidget(v1)
         toolbar.addWidget(QLabel(" <> "))
