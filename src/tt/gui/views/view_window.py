@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QRect
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.axes import Axes
@@ -14,6 +14,7 @@ from typing_extensions import override
 from tt.data.punits import dt
 from tt.data.trace import Trace
 from tt.data.view import ViewSpec, SubPlot, AxisLean
+from tt.gui.app import App
 from tt.gui.trace.figure import PlotFigure
 from tt.gui.trace.trace_config_dialog import STAT_FUNC_NAME_2_LABEL
 from tt.gui.views.view_config_dialog import ViewConfigDialog
@@ -23,12 +24,19 @@ class ViewWindow(QWidget):
     replot_signal = Signal()
     show_config_dialog = Signal()
 
-    def __init__(self, main_window, app, view_name: str):
+    def __init__(self, main_window, app, view: str | ViewSpec):
         super().__init__(None)
         from tt.gui.app import App
         self.app: App = app
 
-        self.view_spec: ViewSpec = app.project.views.get_view_spec(view_name)
+        def get_view_spec_and_name() -> tuple[ViewSpec, str]:
+            match view:
+                case str():
+                    return app.project.views.get_view_spec(view), view
+                case ViewSpec():
+                    return view, view.name
+
+        self.view_spec, view_name = get_view_spec_and_name()
 
         self.setWindowFlags(Qt.WindowType.Window)
         PlotFigure.NEXT_PLOT_ID += 1
@@ -238,3 +246,18 @@ class ViewWindow(QWidget):
 
         if event.key() == Qt.Key.Key_Escape:
             self.close()
+
+
+def show_view(app: App, view_name: str | ViewSpec) -> ViewWindow:
+    main_window = app.main_window()
+    main_window_geometry = main_window.geometry()
+    win = ViewWindow(main_window, app, view_name)
+    win.show()
+    figure_geometry: QRect = win.geometry()
+
+    win.move(
+        main_window_geometry.center().x() - int(figure_geometry.width() / 2),
+        main_window_geometry.center().y() - int(figure_geometry.height() / 2)
+    )
+    main_window.app.register_window(win)  # pyright: ignore [reportAttributeAccessIssue]
+    return win

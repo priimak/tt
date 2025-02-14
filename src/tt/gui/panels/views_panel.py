@@ -1,13 +1,13 @@
 from typing import override, Any
 
-from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex, QPersistentModelIndex, QRect
+from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex, QPersistentModelIndex
 from PySide6.QtGui import QContextMenuEvent
 from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QMessageBox
 from pytide6 import VBoxPanel, Dialog, PushButton, VBoxLayout, RichTextLabel, HBoxPanel, W, LineTextInput
 
 from tt.data.view import ViewSpec
 from tt.gui.app import App
-from tt.gui.views.view_window import ViewWindow
+from tt.gui.views.view_window import ViewWindow, show_view
 
 
 class ViewNameChangeDialog(Dialog):
@@ -78,18 +78,7 @@ class ViewsView(QTableView):
     def render_view(self) -> ViewWindow:
         selection = self.selectedIndexes()
         view_name = self.table_model.data(selection[0], Qt.ItemDataRole.DisplayRole)
-        main_window = self.app.main_window()
-        main_window_geometry = main_window.geometry()
-        win = ViewWindow(main_window, self.app, view_name)
-        win.show()
-        figure_geometry: QRect = win.geometry()
-
-        win.move(
-            main_window_geometry.center().x() - int(figure_geometry.width() / 2),
-            main_window_geometry.center().y() - int(figure_geometry.height() / 2)
-        )
-        main_window.app.register_window(win)  # pyright: ignore [reportAttributeAccessIssue]
-        return win
+        return show_view(self.app, view_name)
 
     def edit_view(self):
         self.render_view().show_config_dialog.emit()

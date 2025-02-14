@@ -10,8 +10,10 @@ from pytide6.buttons import PushButton
 from pytide6.widget_wrapper import W
 
 from tt.data.trace import TraceState, Trace
+from tt.data.view import ViewSpec, SubPlot, TraceSpec, AxisLean
 from tt.gui.app import App
 from tt.gui.trace.create_new_trace_dialog import CreateNewTraceDialog
+from tt.gui.views.view_window import show_view
 
 INTERNAL_CHANGE_ID: int = 1
 
@@ -110,24 +112,29 @@ class TracesView(QTableView):
 
     @override
     def contextMenuEvent(self, arg__1: QContextMenuEvent) -> None:
+        multiple_selection = len(self.selectedIndexes()) > 1
+
         menu = QMenu(self)
 
-        menu.addAction("Plot latest version of the trace", self.render_latest_trace)
-        menu.addAction("Plot latest and previous version of the trace", self.render_latest_and_previous_trace)
-
-        menu.addSeparator()
-        menu.addAction("Rename trace label", self.rename_trace)
-        if self.trace_state == TraceState.ACTIVE:
-            menu.addAction("Mark as inactive", self.mark_as_inactive)
+        if multiple_selection:
+            menu.addAction("Plot latest versions of selected traces", self.render_latest_traces)
         else:
-            menu.addAction("Mark as active", self.mark_as_active)
+            menu.addAction("Plot latest version of the trace", self.render_latest_trace)
+            menu.addAction("Plot latest and previous version of the trace", self.render_latest_and_previous_trace)
 
-        selection = self.selectedIndexes()
-        if selection != [] and self.app.project is not None:
-            tr = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
-            if tr.is_derivative:
-                menu.addAction("Delete", self.delete_trace)
-                menu.addAction("Edit Definition", self.edit_derivative_trace_definition)
+            menu.addSeparator()
+            menu.addAction("Rename trace label", self.rename_trace)
+            if self.trace_state == TraceState.ACTIVE:
+                menu.addAction("Mark as inactive", self.mark_as_inactive)
+            else:
+                menu.addAction("Mark as active", self.mark_as_active)
+
+            selection = self.selectedIndexes()
+            if selection != [] and self.app.project is not None:
+                tr = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
+                if tr.is_derivative:
+                    menu.addAction("Delete", self.delete_trace)
+                    menu.addAction("Edit Definition", self.edit_derivative_trace_definition)
 
         menu.popup(arg__1.globalPos())
 
@@ -137,6 +144,24 @@ class TracesView(QTableView):
             self.app.project.traces(-1, self.trace_state)[selection[0].row()].show_in_new_window(
                 self.app.main_window()
             )
+
+    def render_latest_traces(self) -> None:
+        selection = self.selectedIndexes()
+        if selection != [] and self.app.project is not None:
+            selection = self.selectedIndexes()
+            trace_names = [self.table_model.data(i, Qt.ItemDataRole.DisplayRole) for i in selection]
+            view_spec = ViewSpec("Traces", num_rows = 1, num_columns = 1, title = "Traces")
+            subplot: SubPlot = view_spec.get_subplot(0, 0)
+            for trace_name in trace_names:
+                subplot.add_trace_spec(TraceSpec(
+                    name = trace_name,
+                    trace_version = self.app.project.latest_traces_version,
+                    on_axis = AxisLean.LEFT,
+                    color = "auto",
+                    show_filtered_trace = False,
+                    show_legends = False
+                ))
+            show_view(self.app, view_spec)
 
     def render_latest_and_previous_trace(self) -> None:
         selection = self.selectedIndexes()
@@ -196,7 +221,7 @@ class TracesPanel(VBoxPanel):
         self.app = app
         self.traces_view = TracesView(self, app, trace_state)
         self.traces_view.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.traces_view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.traces_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.layout().addWidget(self.traces_view)
         parent_change = app.notify_tables_require_change
 
