@@ -1,0 +1,22 @@
+site_name: Trace Tool
+theme:
+  name: material
+  features:
+    - navigation.sections
+
+# Markdown extensions
+markdown_extensions:
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - "Introduction": "index.md"
+  - "Installation": "installation.md"
+  - "Chipscope csv file format": "chipscope_file_format.md"
+  - "Basic Usage": "basic_usage.md"
+  - "Trace Settings": "trace_settings.md"
+  - "Derivative Traces": "derivative_traces.md"
+  - "Views": "views.md"
