@@ -20,4 +20,4 @@ functionality for annotating traces, creating trace views for presentation and a
 given trace and many more.
 
 _Trace Tool_ is written in pure python and distributed under MIT license. Its source code can be 
-found [here](https://github.com/priimak/tt).
+found at [github.com/priimak/tt](https://github.com/priimak/tt).
