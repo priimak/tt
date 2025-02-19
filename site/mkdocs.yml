@@ -1,6 +1,8 @@
 site_name: Trace Tool
 theme:
   name: material
+  logo:
+    img/tt.png
   features:
     - navigation.sections
 
