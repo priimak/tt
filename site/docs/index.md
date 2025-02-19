@@ -1,5 +1,7 @@
-Trace Tool. Version 0.11.0
-==========================
+Trace Tool
+===========
+
+_Version: 0.11.0_
 
 [ChipScope](https://www.xilinx.com/products/intellectual-property/chipscope_ila.html) is an IP core provided
 by Xilinx/AMD for many of their series FPGA chips. When installed it can capture analog and digital signals for any
