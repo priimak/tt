@@ -118,6 +118,11 @@ class TracesView(QTableView):
 
         if multiple_selection:
             menu.addAction("Plot latest versions of selected traces", self.render_latest_traces)
+            if self.trace_state == TraceState.ACTIVE:
+                menu.addAction("Mark as inactive", self.mark_as_inactive)
+            else:
+                menu.addAction("Mark as active", self.mark_as_active)
+
         else:
             menu.addAction("Plot latest version of the trace", self.render_latest_trace)
             menu.addAction("Plot latest and previous version of the trace", self.render_latest_and_previous_trace)
@@ -204,15 +209,23 @@ class TracesView(QTableView):
 
     def mark_as_inactive(self) -> None:
         selection = self.selectedIndexes()
-        if selection != [] and self.app.project is not None:
-            self.app.project.traces(-1, TraceState.ACTIVE)[selection[0].row()].state = TraceState.INACTIVE
+        if self.app.project is not None:
+            traces_to_deactivate = [
+                self.app.project.traces(-1, TraceState.ACTIVE)[selected_row.row()] for selected_row in selection
+            ]
+            for trace in traces_to_deactivate:
+                trace.state = TraceState.INACTIVE
             self.app.notify_tables_require_change()
 
     def mark_as_active(self) -> None:
         selection = self.selectedIndexes()
-        if selection != [] and self.app.project is not None:
-            self.app.project.traces(-1, TraceState.INACTIVE)[selection[0].row()].state = TraceState.ACTIVE
-            self.app.notify_tables_require_change()
+        if self.app.project is not None:
+            traces_to_activate = [
+                self.app.project.traces(-1, TraceState.INACTIVE)[selected_row.row()] for selected_row in selection
+            ]
+            for trace in traces_to_activate:
+                trace.state = TraceState.ACTIVE
+        self.app.notify_tables_require_change()
 
 
 class TracesPanel(VBoxPanel):
@@ -230,6 +243,7 @@ class TracesPanel(VBoxPanel):
             parent_change()
             self.traces_view.table_model.layoutChanged.emit()
             self.traces_view.resizeColumnsToContents()
+            self.traces_view.clearSelection()
 
         app.notify_tables_require_change = notifier
 
