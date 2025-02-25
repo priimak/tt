@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from typing_extensions import override
 
+from tt.data.domain_type import DomainType
 from tt.data.punits import dt
 from tt.data.trace import Trace
 from tt.data.view import ViewSpec, SubPlot, AxisLean
@@ -57,7 +58,7 @@ class ViewWindow(QWidget):
         layout.addWidget(toolbar)
         layout.addWidget(self.canvas, stretch = 1)
         subplots = self.canvas.figure.subplots(
-            nrows = self.view_spec.num_rows, ncols = self.view_spec.num_columns, sharex = True
+            nrows = self.view_spec.num_rows, ncols = self.view_spec.num_columns
         )
         self.ax = [subplots] if isinstance(subplots, Axes) else subplots
         self.canvas.figure.suptitle(self.view_spec.title)
@@ -78,7 +79,7 @@ class ViewWindow(QWidget):
         self.canvas.figure.clear()
 
         subplots = self.canvas.figure.subplots(
-            nrows = self.view_spec.num_rows, ncols = self.view_spec.num_columns, sharex = True
+            nrows = self.view_spec.num_rows, ncols = self.view_spec.num_columns
         )
         self.ax = [subplots] if isinstance(subplots, Axes) else subplots
 
@@ -92,6 +93,8 @@ class ViewWindow(QWidget):
                 axes = self.get_ax(row, col)
 
                 subplot: SubPlot = self.view_spec.get_subplot(row, col)
+
+                axes.domain_type = subplot.get_domain_type(project)
 
                 x_axis_label = subplot.x_axis_label
                 if x_axis_label != "":
@@ -169,6 +172,23 @@ class ViewWindow(QWidget):
                     self.canvas.figure.tight_layout()
                 except:
                     pass
+
+        time_domain_root_axes = None
+        freq_domain_root_axes = None
+        for row in range(self.view_spec.num_rows):
+            for col in range(self.view_spec.num_columns):
+                axes = self.get_ax(row, col)
+                if axes.domain_type is not None:
+                    if axes.domain_type == DomainType.TIME:
+                        if time_domain_root_axes is None:
+                            time_domain_root_axes = axes
+                        else:
+                            axes.sharex(time_domain_root_axes)
+                    elif axes.domain_type == DomainType.FREQUENCY:
+                        if freq_domain_root_axes is None:
+                            freq_domain_root_axes = axes
+                        else:
+                            axes.sharex(freq_domain_root_axes)
 
         self._redraw()
 

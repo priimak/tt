@@ -292,9 +292,17 @@ class EditSubplotDialog(Dialog):
         def add_trace(trace_label: str):
             trs = self.project.traces(-1, trace_name = trace_label)
             if trs != []:
-                self.subplot.remove_trace_spec(trs[0].name, -1)
+                trace_name = trs[0].name
+                domain_types = {
+                    self.project.traces(-1, trace_name = ts.name)[0].domain_type
+                    for ts in self.subplot.get_trace_specs()
+                }
+                if len(domain_types) > 0 and trs[0].domain_type not in domain_types:
+                    self.app.show_error("Traces with different domain types cannot be mixed within the same subplot.")
+                    return
+                self.subplot.remove_trace_spec(trace_name, -1)
                 self.subplot.add_trace_spec(TraceSpec(
-                    name = trs[0].name, trace_version = -1, on_axis = AxisLean.LEFT, color = "auto",
+                    name = trace_name, trace_version = -1, on_axis = AxisLean.LEFT, color = "auto",
                     show_filtered_trace = False, show_legends = False
                 ))
                 self.build_traces_panel()

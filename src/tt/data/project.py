@@ -226,6 +226,13 @@ class Project(JsonSerializable):
             dt = lambda: self.__implied_dt
         ).add_trace(name, function)
 
+    def make_derivative_trace(self, name: str, function: Function) -> Trace:
+        return TracesConfig(
+            config_file = self.project_dir / "data" / "config.json",
+            latest_traces_version = self.latest_traces_version,
+            dt = lambda: self.__implied_dt
+        ).mk_trace(name, function)
+
     def update_derivative_trace(self, name: str, function: Function) -> None:
         TracesConfig(
             config_file = self.project_dir / "data" / "config.json",

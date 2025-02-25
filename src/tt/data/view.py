@@ -4,6 +4,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, override
 
+from tt.data.domain_type import DomainType
+
 
 class Persisting(ABC):
     @abstractmethod
@@ -137,6 +139,13 @@ class SubPlot:
         self.__x_axis_label: str = x_axis_label
         self.__show_grid: bool = show_grid
         self.__legend_location = legend_location
+
+    def get_domain_type(self, project) -> DomainType | None:
+        if self.__traces == []:
+            return None
+        else:
+            trs = project.traces(-1, trace_name = self.__traces[0].name)
+            return None if trs == [] else trs[0].domain_type
 
     def persist(self) -> None:
         if self._view_spec is not None:

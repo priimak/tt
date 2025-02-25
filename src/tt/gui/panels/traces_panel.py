@@ -9,6 +9,8 @@ from pytide6 import VBoxPanel, Dialog, VBoxLayout, HBoxPanel, LineTextInput, Ric
 from pytide6.buttons import PushButton
 from pytide6.widget_wrapper import W
 
+from tt.data.function import Functions
+from tt.data.punits import Frequency, TimeUnit
 from tt.data.trace import TraceState, Trace
 from tt.data.view import ViewSpec, SubPlot, TraceSpec, AxisLean
 from tt.gui.app import App
@@ -126,6 +128,7 @@ class TracesView(QTableView):
         else:
             menu.addAction("Plot latest version of the trace", self.render_latest_trace)
             menu.addAction("Plot latest and previous version of the trace", self.render_latest_and_previous_trace)
+            menu.addAction("Plot trace in the frequency domain", self.render_latest_fourier)
 
             menu.addSeparator()
             menu.addAction("Rename trace label", self.rename_trace)
@@ -142,6 +145,19 @@ class TracesView(QTableView):
                     menu.addAction("Edit Definition", self.edit_derivative_trace_definition)
 
         menu.popup(arg__1.globalPos())
+
+    def render_latest_fourier(self) -> None:
+        selection = self.selectedIndexes()
+        if selection != [] and self.app.project is not None:
+            funit = TimeUnit.value_of(self.app.project.dt_unit).matching_frequency_unit()
+            source_trace: Trace = self.app.project.traces(-1, self.trace_state)[selection[0].row()]
+            trace: Trace = self.app.project.make_derivative_trace(
+                f"Fourier Transform of \"{source_trace.label}\"",
+                Functions.FourierTransform(
+                    self.app.project, [source_trace.name], Frequency.value_of("0 MHz"), None, funit
+                )
+            )
+            trace.show_in_new_window(self.app.main_window())
 
     def render_latest_trace(self) -> None:
         selection = self.selectedIndexes()
