@@ -16,3 +16,6 @@ how any given trace looked like before and after some change to the Verilog code
 "_Trace Tool_" (TT), is an application that addresses above-mentioned issues and also provides additional
 functionality for annotating traces, creating trace views for presentation and analysis, tracking history of any
 given trace and many more.
+
+_Trace Tool_ is written in pure python and distributed under MIT license. Its source code can be 
+found at [github.com/priimak/tt](https://github.com/priimak/tt).

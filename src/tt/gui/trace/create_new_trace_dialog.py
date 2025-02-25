@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QLabel, QGridLayout, QStackedLayout, QLayoutItem
 from pytide6 import Dialog, VBoxLayout, W, ComboBox, LineTextInput, HBoxPanel, PushButton, Panel
 
 from tt.data.function import Functions
-from tt.data.punits import Frequency
+from tt.data.punits import Frequency, FrequencyUnit, TimeUnit
 from tt.data.trace import Trace
 from tt.gui.app import App
 from tt.gui.elemental import HLine
@@ -192,6 +192,41 @@ class CreateNewTraceDialog(Dialog):
         self.panel_lowpass.layout().addWidget(HBoxPanel([lowpass_trace_label]))
         config_panel_layout.addWidget(self.panel_lowpass)
 
+        ############### fourier
+        self.panel_fourier: Panel[QGridLayout] = Panel(QGridLayout())
+        self.panel_fourier.setObjectName("Fourier Transform")
+        fourier_trace_label = QLabel("")
+        self.fourier_trace = ""
+
+        def trace_for_fourier(label: str):
+            fourier_trace_label.setText(f"<em>Trace: <b>{label}</b></em>")
+            self.fourier_trace = label.strip()
+
+        self.panel_fourier.layout().addWidget(
+            PushButton("Pick Trace", on_clicked = mk_show_trace_picker(self, app, trace_for_fourier)), 0, 0
+        )
+        self.frequency_min = LineTextInput("Frequency Min", "0 MHz")
+        self.frequency_max = LineTextInput("Frequency Max", "")
+
+        assert app.project is not None
+        self.display_frequency_unit = TimeUnit.value_of(app.project.dt_unit).matching_frequency_unit().value
+
+        def set_display_frequency_unit(label: str):
+            self.display_frequency_unit = label
+
+        # self.display_frequency_unit = LineTextInput("Display Frequency Unit", "KHz")
+        self.frequency_unit_selector = ComboBox(
+            items = [f.value for f in FrequencyUnit],
+            on_text_change = set_display_frequency_unit,
+            current_selection = self.display_frequency_unit,
+            min_width = 150
+        )
+        # self.panel_fourier.layout().addWidget(self.frequency_min, 1, 0)
+        # self.panel_fourier.layout().addWidget(self.frequency_max, 2, 0)
+        # self.panel_fourier.layout().addWidget(self.frequency_unit_selector, 3, 0)
+        self.panel_fourier.layout().addWidget(HBoxPanel([fourier_trace_label]))
+        config_panel_layout.addWidget(self.panel_fourier)
+
         def set_function_name(name: str) -> None:
             match name:
                 case "Add":
@@ -204,6 +239,8 @@ class CreateNewTraceDialog(Dialog):
                     config_panel_layout.setCurrentIndex(3)
                 case "Lowpass Filter":
                     config_panel_layout.setCurrentIndex(4)
+                case "Fourier Transform":
+                    config_panel_layout.setCurrentIndex(5)
 
         self.help_button = app.mk_help_tool_button()
 
@@ -262,6 +299,25 @@ class CreateNewTraceDialog(Dialog):
                         project.update_derivative_trace(
                             trace.name,
                             Functions.LowpassFilter(project, [self.lowpass_trace], freq)
+                        )
+                    except:
+                        app.show_error("Please enter a valid frequency.")
+                        return
+
+                case "Fourier Transform":
+                    if self.fourier_trace == "":
+                        app.show_error("Please enter a trace name to apply Fourier transform to.")
+                        return
+                    try:
+                        freq_min = Frequency.value_of(self.frequency_min.text())
+                        fmax_text = self.frequency_max.text().strip()
+                        freq_max = None if fmax_text == "" else Frequency.value_of(fmax_text)
+                        project.update_derivative_trace(
+                            trace.name,
+                            Functions.FourierTransform(
+                                project, [self.fourier_trace], freq_min, freq_max,
+                                FrequencyUnit.value_of(self.display_frequency_unit)
+                            )
                         )
                     except:
                         app.show_error("Please enter a valid frequency.")
@@ -346,6 +402,27 @@ class CreateNewTraceDialog(Dialog):
                     app.notify_tables_require_change()
                     self.close()
 
+                case "Fourier Transform":
+                    if self.fourier_trace == "":
+                        app.show_error("Please enter a trace name to apply Fourier transform to.")
+                        return
+                    try:
+                        freq_min = Frequency.value_of(self.frequency_min.text())
+                        fmax_text = self.frequency_max.text().strip()
+                        freq_max = None if fmax_text == "" else Frequency.value_of(fmax_text)
+                        project.add_derivative_trace(
+                            new_trace_name,
+                            Functions.FourierTransform(
+                                project, [self.fourier_trace], freq_min, freq_max,
+                                FrequencyUnit.value_of(self.display_frequency_unit)
+                            )
+                        )
+                    except:
+                        app.show_error("Please enter a valid frequency.")
+                        return
+                    app.notify_tables_require_change()
+                    self.close()
+
         header_title = "Create New Derivative Trace" if trace is None else "Edit Derivative Trace Definition"
 
         function_selector = ComboBox(items = Functions.NAMES, on_text_change = set_function_name, min_width = 150)
@@ -374,8 +451,11 @@ class CreateNewTraceDialog(Dialog):
                     trace_for_lowpass(function.source_traces[0])
                     self.cutoff_freq_input.setText(function.params()["cutoff_frequency"])
 
+                case "fourier_transform":
+                    trace_for_fourier(function.source_traces[0])
+                    self.frequency_unit_selector.setCurrentText(function.params()["display_frequency_unit"])
+
         self.setLayout(VBoxLayout([
-            # W(self.help_button, alignment = Qt.AlignmentFlag.AlignRight),
             W(QLabel(header_title), stretch = 1, alignment = Qt.AlignmentFlag.AlignCenter),
             HLine(),
             trace_name_input,

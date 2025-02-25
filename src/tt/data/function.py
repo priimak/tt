@@ -3,9 +3,10 @@ from functools import reduce
 from operator import mul
 from typing import Any
 
+import numpy as np
 from scipy import signal
 
-from tt.data.punits import Frequency, Duration
+from tt.data.punits import Frequency, Duration, FrequencyUnit
 
 
 class Function:
@@ -38,29 +39,6 @@ class Function:
 
 class Functions:
     @staticmethod
-    def from_json(data: dict[str, Any], project) -> Function | None:
-        derivative_function = data.get("derivative_function", "")
-        match derivative_function:
-            case "":
-                return None
-            case "add":
-                return Functions.Add(project, data.get("derivative_sources", []))
-            case "subtract":
-                return Functions.Subtract(project, data.get("derivative_sources", []))
-            case "multiply":
-                return Functions.Multiply(project, data.get("derivative_sources", []))
-            case "divide":
-                return Functions.Divide(project, data.get("derivative_sources", []))
-            case "lowpass_filter":
-                return Functions.LowpassFilter(
-                    project,
-                    data.get("derivative_sources", []),
-                    cutoff_frequency = Frequency.value_of(data["derivative_params"]["cutoff_frequency"])
-                )
-            case _:
-                raise ValueError(f"Unknown derivative function [{derivative_function}]")
-
-    @staticmethod
     def value_of(project, function_name: str, source_traces: list[str], params: dict[str, Any]) -> Function:
         match function_name:
             case "add":
@@ -73,16 +51,25 @@ class Functions:
                 return Functions.Divide(project, source_traces)
             case "lowpass_filter":
                 return Functions.LowpassFilter(project, source_traces, Frequency.value_of(params["cutoff_frequency"]))
+            case "fourier_transform":
+                fmax = None if params["frequency_max"] == "None" else Frequency.value_of(params["frequency_max"])
+                return Functions.FourierTransform(
+                    project, source_traces,
+                    frequency_min = Frequency.value_of(params["frequency_min"]),
+                    frequency_max = fmax,
+                    display_frequency_unit = FrequencyUnit.value_of(params["display_frequency_unit"])
+                )
             case _:
                 raise ValueError(f"Unknown function [{function_name}]")
 
-    NAMES = ["Add", "Subtract", "Multiply", "Divide", "Lowpass Filter"]
+    NAMES = ["Add", "Subtract", "Multiply", "Divide", "Lowpass Filter", "Fourier Transform"]
     CONF_NAMES_2_NAME = {
         "add": "Add",
         "subtract": "Subtract",
         "multiply": "Multiply",
         "divide": "Divide",
-        "lowpass_filter": "Lowpass Filter"
+        "lowpass_filter": "Lowpass Filter",
+        "fourier_transform": "Fourier Transform"
     }
 
     class Add(Function):
@@ -170,3 +157,38 @@ class Functions:
 
         def params(self) -> dict[str, Any]:
             return {"cutoff_frequency": f"{self.cutoff_frequency}"}
+
+    class FourierTransform(Function):
+        def __init__(self, project,
+                     source_traces: list[str],
+                     frequency_min: Frequency,
+                     frequency_max: Frequency | None,
+                     display_frequency_unit: FrequencyUnit):
+            super().__init__(project, source_traces)
+            if len(source_traces) != 1:
+                raise ValueError("FourierTransform only supports one input trace")
+
+            self.frequency_min = frequency_min
+            self.frequency_max = frequency_max
+            self.display_frequency_unit = display_frequency_unit
+
+        def xy(self, trace_version: int) -> tuple[list[float], list[float]]:
+            x, y = self.project.traces(version = trace_version, trace_name = self.source_traces[0])[0].xy(self.project)
+            v = np.fft.fft(y)
+            v_len_one_side = int(len(v) / 2)
+            fft_values = [abs(fv) for fv in v[0:v_len_one_side]]
+            f1 = 1 / (Duration.value_of(f"{self.project.implied_dt} {self.project.dt_unit}") * len(y))
+            f1_mhz = f1.as_float(self.display_frequency_unit)
+            ffv = fft_values[1:]
+            ffv_sum = sum(ffv)
+            return [f1_mhz * n for n in range(len(fft_values))][1:], [fv / ffv_sum for fv in fft_values[1:]]
+
+        def name(self) -> str:
+            return "fourier_transform"
+
+        def params(self) -> dict[str, Any]:
+            return {
+                "frequency_min": f"{self.frequency_min}",
+                "frequency_max": f"{self.frequency_max}",
+                "display_frequency_unit": f"{self.display_frequency_unit.value}"
+            }

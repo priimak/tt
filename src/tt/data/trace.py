@@ -9,6 +9,7 @@ from PySide6.QtCore import QRect
 from polars import DataFrame
 from pytide6 import MainWindow
 
+from tt.data.domain_type import DomainType
 from tt.data.function import Function, Functions
 from tt.data.jsonable import JsonSerializable
 from tt.data.overlays import Overlay, OverlayNone, OverlaySavitzkyGolay, OverlayLowpass
@@ -93,15 +94,11 @@ class TracesConfig(JsonSerializable):
             "traces": [t.to_dict() for t in traces]
         }, indent = 2))
 
-    def add_trace(self, name: str, function: Function) -> None:
-        traces = self.get_traces(-1)
-
-        if name in [t.name for t in traces] or name in [t.label for t in traces]:
-            raise RuntimeError(f"Trace [{name}] already exists")
-
-        traces.append(Trace(
-            version = self.latest_traces_version,
-            config = self,
+    def mk_trace(self, name: str, function: Function) -> "Trace":
+        derivative_function = function.name()
+        x_label = "Frequency" if derivative_function == "fourier_transform" else "t"
+        return Trace(
+            version = self.latest_traces_version, config = self,
             tcf = TraceConfig({
                 "name": name,
                 "label": name,
@@ -109,9 +106,21 @@ class TracesConfig(JsonSerializable):
                 "derivative_function": function.name(),
                 "derivative_sources": function.derivative_sources(),
                 "derivative_params": function.params(),
+                "x_label": x_label,
+                "y_label": ""
             }),
-            index = len(traces)
-        ))
+            index = -1
+        )
+
+    def add_trace(self, name: str, function: Function) -> None:
+        traces = self.get_traces(-1)
+
+        if name in [t.name for t in traces] or name in [t.label for t in traces]:
+            raise RuntimeError(f"Trace [{name}] already exists")
+
+        new_trace = self.mk_trace(name, function)
+        new_trace.index = len(self.traces)
+        traces.append(new_trace)
 
         self.config_file.write_text(json.dumps({
             "traces": [t.to_dict() for t in traces]
@@ -187,6 +196,16 @@ class Trace(JsonSerializable):
         self.__derivative_sources = tcf.get_value("derivative_sources", [])
         self.__derivative_func = tcf.get_value("derivative_function", "")
         self.__derivative_params = tcf.get_value("derivative_params", {})
+
+    def get_version(self, version: int) -> "Trace":
+        return Trace(version, self.__config, self.tcf, self.index)
+
+    @property
+    def domain_type(self) -> DomainType:
+        if self.__derivative and self.__derivative_func == "fourier_transform":
+            return DomainType.FREQUENCY
+        else:
+            return DomainType.TIME
 
     def cache_id(self) -> str:
         return (f"{self.y_scale} :: {self.y_offset} :: {self.__derivative} :: {self.__derivative_sources} "

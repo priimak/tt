@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 
+from tt.data.domain_type import DomainType
 from tt.data.punits import dt
 from tt.data.trace import Overlay
 from tt.gui.trace.trace_config_dialog import TraceConfigDialog, STAT_FUNC_NAME_2_LABEL
@@ -177,9 +178,15 @@ class PlotFigure(QWidget):
 
         if self.original_trace.x_label != "":
             assert self.app.project is not None
-            self.ax.set_xlabel(f"{self.original_trace.x_label} [{self.app.project.dt_unit}]")
+            if self.trace_2.domain_type == DomainType.TIME:
+                self.ax.set_xlabel(f"{self.original_trace.x_label} [{self.app.project.dt_unit}]")
+            else:
+                freq_unit = self.original_trace.tcf.cfg["derivative_params"]["display_frequency_unit"]
+                self.ax.set_xlabel(f"{self.original_trace.x_label} [{freq_unit}]")
+
         else:
-            self.ax.set_xlabel(self.original_trace.x_label)
+            self.ax.set_xlabel("")
+
         self.ax.set_ylabel(self.original_trace.y_label)
 
         if self.trace_1 is not None:
@@ -216,11 +223,8 @@ class PlotFigure(QWidget):
 
         if self.trace_2 is not None:
             x, y = self.trace_2.xy(self.app.project)
-            if self.trace_1 is None:
-                self.plt2 = self.ax.plot(x, y, "-", label = self.trace_2.label, color = "blue")
-            else:
-                self.plt2 = self.ax.plot(x, y, "-", label = f"{self.trace_2.label} # {self.trace_2.version}",
-                                         color = "blue")
+            label = self.trace_2.label if self.trace_1 is None else f"{self.trace_2.label} # {self.trace_2.version}"
+            self.plt2 = self.ax.plot(x, y, "-", label = label, color = "blue")
 
             assert self.app.project is not None
             try:
@@ -264,7 +268,7 @@ class PlotFigure(QWidget):
             self.plt2 = None
         else:
             assert self.app.project is not None
-            self.trace_2 = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
+            self.trace_2 = self.original_trace.get_version(int(new_version))
         self.replot_traces()
 
     def set_v1_version(self, new_version: str) -> None:
@@ -275,7 +279,7 @@ class PlotFigure(QWidget):
             self.plt1 = None
         else:
             assert self.app.project is not None
-            self.trace_1 = self.app.project.traces(version = int(new_version), trace_name = self.trace_name)[0]
+            self.trace_1 = self.original_trace.get_version(int(new_version))
         self.replot_traces()
 
     def closeEvent(self, event):
