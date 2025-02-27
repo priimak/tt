@@ -4,9 +4,10 @@ from typing import override, Any
 
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex, QPersistentModelIndex
 from PySide6.QtGui import QContextMenuEvent, QColor
-from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QMessageBox
+from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QMenu, QMessageBox, QLabel
 from pytide6 import VBoxPanel, Dialog, VBoxLayout, HBoxPanel, LineTextInput, RichTextLabel
 from pytide6.buttons import PushButton
+from pytide6.inputs import FloatTextInput
 from pytide6.widget_wrapper import W
 
 from tt.data.function import Functions
@@ -20,6 +21,47 @@ from tt.gui.views.view_window import show_view
 INTERNAL_CHANGE_ID: int = 1
 
 TRACE_LABEL_VALID_REGEX = re.compile("^[a-zA-Z0-9\\[\\]_\\-+. ]+$")
+
+
+class ChangeScaleAndOffsetDialog(Dialog):
+    def __init__(self, parent, traces: list[Trace]):
+        super().__init__(parent, windowTitle = "Change scale and offset", modal = True)
+        y_scales = {trace.y_scale for trace in traces}
+        y_offsets = {trace.y_offset for trace in traces}
+        self.scale = list(y_scales)[0] if len(y_scales) == 1 else 1.0
+        self.offset = list(y_offsets)[0] if len(y_offsets) == 1 else 0.0
+
+        def change_scale(scale_value: str):
+            try:
+                self.scale = float(scale_value)
+            except ValueError:
+                pass
+
+        def change_offset(offset_value: str):
+            try:
+                self.offset = float(offset_value)
+            except ValueError:
+                pass
+
+        def on_ok():
+            for trace in traces:
+                trace.set_y_scale(f"{self.scale}")
+                trace.set_y_offset(f"{self.offset}")
+            self.close()
+
+        self.setLayout(VBoxLayout([
+            HBoxPanel([
+                QLabel("Linear Transform. Y' = "),
+                FloatTextInput(label = None, text = f"{self.scale}", on_text_change = change_scale),
+                QLabel(" × Y + "),
+                FloatTextInput(label = None, text = f"{self.offset}", on_text_change = change_offset)
+            ]),
+            HBoxPanel([
+                W(HBoxPanel(), stretch = 1),
+                PushButton("Ok", on_clicked = on_ok),
+                PushButton("Cancel", on_clicked = self.close)
+            ])
+        ]))
 
 
 class TraceLabelChangeDialog(Dialog):
@@ -120,6 +162,8 @@ class TracesView(QTableView):
 
         if multiple_selection:
             menu.addAction("Plot latest versions of selected traces", self.render_latest_traces)
+            menu.addSeparator()
+            menu.addAction("Change scale and offset", self.change_scale_and_offset)
             if self.trace_state == TraceState.ACTIVE:
                 menu.addAction("Mark as inactive", self.mark_as_inactive)
             else:
@@ -131,6 +175,7 @@ class TracesView(QTableView):
             menu.addAction("Plot trace in the frequency domain", self.render_latest_fourier)
 
             menu.addSeparator()
+            menu.addAction("Change scale and offset", self.change_scale_and_offset)
             menu.addAction("Rename trace label", self.rename_trace)
             if self.trace_state == TraceState.ACTIVE:
                 menu.addAction("Mark as inactive", self.mark_as_inactive)
@@ -158,6 +203,14 @@ class TracesView(QTableView):
                 )
             )
             trace.show_in_new_window(self.app.main_window())
+
+    def change_scale_and_offset(self) -> None:
+        selection = self.selectedIndexes()
+        if self.app.project is not None:
+            traces_to_change_linear_transform = [
+                self.app.project.traces(-1, self.trace_state)[selected_row.row()] for selected_row in selection
+            ]
+            ChangeScaleAndOffsetDialog(self, traces_to_change_linear_transform).exec()
 
     def render_latest_trace(self) -> None:
         selection = self.selectedIndexes()
